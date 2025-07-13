@@ -1,6 +1,6 @@
 # vkessentialsbundle
 
-A tiny CLI bundle for Termux that lets you copy, erase, or overwrite files via your clipboard.
+A small handy bundle for Termux that lets you copy, erase, and overwrite files via commands. 
 
 ## Installation
 
@@ -13,9 +13,9 @@ pip install git+https://github.com/vkdatta/vkessentialsbundle.git
 __Copy a file’s contents to clipboard__
 
 ```bash
-copy XYZ.py
+copy xyz.py
 ```
-Copies everything inside XYZ.py into your Termux clipboard.
+Copies everything inside xyz.py into your Termux clipboard.
 
 __Erase a file’s contents__
 
@@ -31,7 +31,8 @@ overwrite draft.md
 ```
 Pastes whatever’s in your clipboard into draft.md, replacing its previous contents.
 
-## Requirements
+## Pre Requirements
 
-1. termux-api package for clipboard commands
-2. Python 3.6+ and pip
+```bash
+pkg install -y termux-api python git curl
+```
