@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+# Copy: file → clipboard
+copy() {
+  if [ -f "$1" ]; then
+    cat "$1" | termux-clipboard-set
+    echo "Contents of $1 copied to clipboard."
+  else
+    echo "File $1 not found."
+  fi
+}
+
+# Erase: wipe file contents
+erase() {
+  if [ -f "$1" ]; then
+    echo -n "Are you sure you want to erase all contents of $1? (yes/no): "
+    read confirm
+    if [ "$confirm" = "yes" ]; then
+      > "$1"
+      echo "Contents of $1 erased."
+    else
+      echo "Operation canceled."
+    fi
+  else
+    echo "File $1 not found."
+  fi
+}
+
+# Overwrite: clipboard → file
+overwrite() {
+  if [ -z "$1" ]; then
+    echo "Usage: overwrite <filename>"
+    return 1
+  fi
+  termux-clipboard-get > "$1"
+  echo "Clipboard contents pasted into $1 (overwritten)."
+}
+
+# Dispatch subcommands
+case "$1" in
+  copy|erase|overwrite) cmd="$1"; shift; $cmd "$@" ;;
+  *) echo "Usage: vkessentials <copy|erase|overwrite> [args]" ;;
+esac
