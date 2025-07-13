@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+if [ -z "$1" ]; then
+  echo "Usage: overwrite <filename>"
+  exit 1
+fi
+termux-clipboard-get > "$1"
+echo "Clipboard pasted into $1."

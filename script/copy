@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+if [ -z "$1" ]; then
+  echo "Usage: copy <filename>"
+  exit 1
+fi
+if [ -f "$1" ]; then
+  cat "$1" | termux-clipboard-set
+  echo "Contents of $1 copied to clipboard."
+else
+  echo "File '$1' not found."
+  exit 1
+fi
