@@ -2,7 +2,7 @@
 
 A small handy bundle for Termux that lets you ```copy```, ```erase```, and ```overwrite``` contents inside a file via these simple commands. 
 
-Plus ```xtract``` tool that extracts tables from multiple web pages!
+Plus ```xtract``` and ```extract``` tools that extracts tables from multiple web pages!
 
 ## Installation
 
@@ -14,7 +14,7 @@ pip install git+https://github.com/vkdatta/vkessentialsbundle.git
 
 If the ```copy```, ```erase```, ```overwrite```, ```xtract``` commands are not working as intended, there might be a possible update in this code. 
 
-As this is a tiny personal setup, no upgrades are directly provided, and all changes are made to the main version itself. So force install the code for better performance. 
+As this is a tiny personal project, no upgrades are directly provided, and all changes are made to the main version itself. So force install the code for better performance. 
 
 ```bash
 pip install --upgrade --force-reinstall git+https://github.com/vkdatta/vkessentialsbundle.git
@@ -60,8 +60,24 @@ xyz.com/list/1
 xyz.com/list/2  
 xyz.com/list/3  
 
-Enter: xyz.com/list/{}  
-And in the number of pages prompt, enter 3
+Enter: ```xyz.com/list/{}```  
+And in the number of pages prompt, enter ```3``` (only in this given example it is 3, change as per your requirements)
+
+__extract__
+
+```bash
+extract
+```
+Same as ```xtract``` but lets you handle URLs from multiple sites using comma/space separation.  
+
+____Note Usage and Workings different from ```xtract```___
+
+Here,  
+Enter: ```xyz.com/list/100``` to extract tables from 100th page only  
+Enter: ```xyz.com/list/{100}``` to extract tables from 1st page to 100th page  
+Enter: ```xyz.com/list/``` to extract tables from that page only  
+
+In addition, You can use multiple URLs from multiple sites using space/comma separation!! 
 
 ## Pre Requirements
 
@@ -93,5 +109,8 @@ pip install pandas
 pkg install -y termux-api python git curl
 ```
 ```bash
-pip install requests pandas beautifulsoup4 tqdm
+pip install requests pandas beautifulsoup4 tqdm 
+```
+```bash
+pip install openpyxl 
 ```
