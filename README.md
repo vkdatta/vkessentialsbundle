@@ -12,7 +12,9 @@ pip install git+https://github.com/vkdatta/vkessentialsbundle.git
 
 ## Upgrade
 
-If the copy, erase, overwrite commands are not working as intended, there might be a possible update in this code. As this is a tiny setup, no upgrades are directly provided and all changes are made to the main version itself. So force install the code for better performance. 
+If the ```copy```, ```erase```, ```overwrite```, ```xtract``` commands are not working as intended, there might be a possible update in this code. 
+
+As this is a tiny personal setup, no upgrades are directly provided, and all changes are made to the main version itself. So force install the code for better performance. 
 
 ```bash
 pip install --upgrade --force-reinstall git+https://github.com/vkdatta/vkessentialsbundle.git
