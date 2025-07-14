@@ -121,11 +121,25 @@ def manual_table_extraction(table):
                 row_data = [col.get_text(strip=True) for col in cols]
                 rows.append(row_data)
         
+        # Find max columns to ensure consistent shape
+        max_columns = max(len(row) for row in rows) if rows else 0
+        if len(headers) > max_columns:
+            headers = headers[:max_columns]
+        elif len(headers) < max_columns:
+            headers += [f"Column_{i+1}" for i in range(len(headers), max_columns)]
+        
+        # Pad rows to match column count
+        padded_rows = []
+        for row in rows:
+            if len(row) < max_columns:
+                row += [''] * (max_columns - len(row))
+            padded_rows.append(row)
+        
         # Create DataFrame
-        if headers and rows:
-            return pd.DataFrame(rows, columns=headers)
-        elif rows:
-            return pd.DataFrame(rows)
+        if headers and padded_rows:
+            return pd.DataFrame(padded_rows, columns=headers)
+        elif padded_rows:
+            return pd.DataFrame(padded_rows)
         else:
             return None
     except Exception as e:
