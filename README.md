@@ -49,18 +49,18 @@ __xtract__
 xtract
 ```
 
-And Enter.
+And Enter.  
 
-This asks URL. 
+This asks URL.  
 
-Enter the URL if you are extracting a single page and enter.
+Enter the URL if you are extracting a single page and enter.  
 If there are multiple pages attached to a single URL, Like:
 
-xyz.com/list/1
-xyz.com/list/2
-xyz.com/list/3
+xyz.com/list/1  
+xyz.com/list/2  
+xyz.com/list/3  
 
-Enter: xyz.com/list/{}
+Enter: xyz.com/list/{}  
 And in the number of pages prompt, enter 3
 
 ## Pre Requirements
