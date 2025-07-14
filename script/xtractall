@@ -87,8 +87,6 @@ def manual_table_extraction(table):
         headers = []
         header_row = None
         
-  headers = []
-
 # 1. Try a real <thead>
 thead = table.find('thead')
 if thead:
