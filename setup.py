@@ -4,7 +4,7 @@ setup(
   name='vkessentialsbundle',
   version='0.1.0',
   description='Termux clipboard copy/erase/overwrite utilities',
-  author='vk',
+  author='vkd',
     scripts=['script/copy','script/erase','script/overwrite'],
   python_requires='>=3.6',
   classifiers=[
