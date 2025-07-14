@@ -1,6 +1,6 @@
 ## vkessentialsbundle
 
-A small handy bundle for Termux that lets you copy, erase, and overwrite files via commands. 
+A small handy bundle for Termux that lets you ```copy```, ```erase```, and ```overwrite``` files via commands. Plus ```xtract``` tool that extracts tables from multiple web pages!
 
 ## Installation
 
