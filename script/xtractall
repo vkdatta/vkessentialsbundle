@@ -79,48 +79,38 @@ def extract_links_from_container(container, link_classes=None):
     return links
 
 def manual_table_extraction(table):
-    """Robust table extraction that handles tables without thead"""
+    """Robust table extraction that handles various table structures"""
+    # Extract headers from thead or first row
     headers = []
-    header_candidates = []
+    header_row = None
     
-    # First try: look for thead
+    # 1. Look for thead section
     thead = table.find('thead')
     if thead:
-        for th in thead.find_all('th'):
+        for row in thead.find_all('tr'):
+            for th in row.find_all(['th', 'td']):
+                headers.append(th.get_text(strip=True))
+    
+    # 2. If no thead, look for th elements in the table
+    if not headers:
+        for th in table.find_all('th'):
             headers.append(th.get_text(strip=True))
     
-    # Second try: look for th in the first row
+    # 3. If still no headers, use first row as headers
     if not headers:
         first_row = table.find('tr')
         if first_row:
+            header_row = first_row
             for cell in first_row.find_all(['th', 'td']):
-                if cell.name == 'th':
-                    headers.append(cell.get_text(strip=True))
-                else:
-                    # If we find a td, but no ths yet, consider it might be a header row
-                    header_candidates.append(cell.get_text(strip=True))
-    
-    # Third try: use header candidates if we found any
-    if not headers and header_candidates:
-        headers = header_candidates
-    
-    # Final fallback: use column numbers if no headers found
-    if not headers:
-        # Find max columns to determine header count
-        max_cols = 0
-        for row in table.find_all('tr'):
-            cols = row.find_all(['td', 'th'])
-            if len(cols) > max_cols:
-                max_cols = len(cols)
-        if max_cols > 0:
-            headers = [f"Column_{i+1}" for i in range(max_cols)]
+                headers.append(cell.get_text(strip=True))
     
     # Extract data rows
     rows = []
     tbody = table.find('tbody') or table  # Fallback to entire table if no tbody
+    
     for row in tbody.find_all('tr'):
         # Skip header row if we identified it
-        if row == first_row:
+        if row == header_row:
             continue
             
         cols = row.find_all(['td', 'th'])
