@@ -62,6 +62,10 @@ def extract_links_from_container(container, link_classes=None):
     """Extract links from a specific container element"""
     links = []
     for a in container.find_all('a', href=True):
+        # Skip empty links
+        if not a['href'] or a['href'].startswith(('javascript:', 'mailto:', 'tel:')):
+            continue
+            
         if link_classes:
             for cls in link_classes:
                 if cls in a.get('class', []):
@@ -80,50 +84,68 @@ def extract_links_from_container(container, link_classes=None):
 
 def manual_table_extraction(table):
     """Robust table extraction that handles various table structures"""
-    # Extract headers from thead or first row
-    headers = []
-    header_row = None
-    
-    # 1. Look for thead section
-    thead = table.find('thead')
-    if thead:
-        for row in thead.find_all('tr'):
-            for th in row.find_all(['th', 'td']):
+    try:
+        # Extract headers from thead or first row
+        headers = []
+        header_row = None
+        
+        # 1. Look for thead section
+        thead = table.find('thead')
+        if thead:
+            for row in thead.find_all('tr'):
+                for th in row.find_all(['th', 'td']):
+                    headers.append(th.get_text(strip=True))
+        
+        # 2. If no thead, look for th elements in the table
+        if not headers:
+            for th in table.find_all('th'):
                 headers.append(th.get_text(strip=True))
-    
-    # 2. If no thead, look for th elements in the table
-    if not headers:
-        for th in table.find_all('th'):
-            headers.append(th.get_text(strip=True))
-    
-    # 3. If still no headers, use first row as headers
-    if not headers:
-        first_row = table.find('tr')
-        if first_row:
-            header_row = first_row
-            for cell in first_row.find_all(['th', 'td']):
-                headers.append(cell.get_text(strip=True))
-    
-    # Extract data rows
-    rows = []
-    tbody = table.find('tbody') or table  # Fallback to entire table if no tbody
-    
-    for row in tbody.find_all('tr'):
-        # Skip header row if we identified it
-        if row == header_row:
-            continue
-            
-        cols = row.find_all(['td', 'th'])
-        if cols:
-            row_data = [col.get_text(strip=True) for col in cols]
-            rows.append(row_data)
-    
-    # Create DataFrame
-    if headers and rows:
-        return pd.DataFrame(rows, columns=headers)
-    elif rows:
-        return pd.DataFrame(rows)
-    else:
+        
+        # 3. If still no headers, use first row as headers
+        if not headers:
+            first_row = table.find('tr')
+            if first_row:
+                header_row = first_row
+                for cell in first_row.find_all(['th', 'td']):
+                    headers.append(cell.get_text(strip=True))
+        
+        # Extract data rows
+        rows = []
+        tbody = table.find('tbody') or table  # Fallback to entire table if no tbody
+        
+        for row in tbody.find_all('tr'):
+            # Skip header row if we identified it
+            if row == header_row:
+                continue
+                
+            cols = row.find_all(['td', 'th'])
+            if cols:
+                row_data = [col.get_text(strip=True) for col in cols]
+                rows.append(row_data)
+        
+        # Find max columns to ensure consistent shape
+        max_columns = max(len(row) for row in rows) if rows else 0
+        if len(headers) > max_columns:
+            headers = headers[:max_columns]
+        elif len(headers) < max_columns:
+            headers += [f"Column_{i+1}" for i in range(len(headers), max_columns)]
+        
+        # Pad rows to match column count
+        padded_rows = []
+        for row in rows:
+            if len(row) < max_columns:
+                row += [''] * (max_columns - len(row))
+            padded_rows.append(row)
+        
+        # Create DataFrame
+        if headers and padded_rows:
+            return pd.DataFrame(padded_rows, columns=headers)
+        elif padded_rows:
+            return pd.DataFrame(padded_rows)
+        else:
+            return None
+    except Exception as e:
+        print(f"    ⚠️ Table extraction error: {str(e)}")
         return None
 
 def extract_content_robust(url, content_type, classes=None, ids=None, link_classes=None):
@@ -223,11 +245,9 @@ def save_content(content, content_type, output_path, source_url=None):
     
     # Handle tables
     if content_type == 'tables':
-        # Combine all tables from same URL
-        combined = pd.concat(content, ignore_index=True)
-        
         if output_path.endswith('.csv'):
             try:
+                combined = pd.concat(content, ignore_index=True)
                 combined.to_csv(output_path, index=False)
                 print(f"💾 Saved CSV: {os.path.abspath(output_path)}")
                 return True
@@ -247,16 +267,16 @@ def save_content(content, content_type, output_path, source_url=None):
                 
             try:
                 with pd.ExcelWriter(output_path) as writer:
-                    # Create meaningful sheet name
-                    if source_url:
-                        domain = urlparse(source_url).netloc.replace('www.', '')[:15]
-                        sheet_name = f"{domain}_Data"
-                    else:
-                        sheet_name = "CombinedData"
-                    
-                    sheet_name = clean_sheet_name(sheet_name)
-                    combined.to_excel(writer, sheet_name=sheet_name, index=False)
-                    print(f"💾 Saved Excel: {os.path.abspath(output_path)}")
+                    # Save each table to separate sheet
+                    for idx, df in enumerate(content):
+                        # Create meaningful sheet name
+                        sheet_name = f"Table_{idx+1}"
+                        if source_url:
+                            domain = urlparse(source_url).netloc.replace('www.', '')[:15]
+                            sheet_name = f"{domain}_T{idx+1}"
+                        sheet_name = clean_sheet_name(sheet_name)
+                        df.to_excel(writer, sheet_name=sheet_name, index=False)
+                    print(f"💾 Saved Excel with {len(content)} sheets: {os.path.abspath(output_path)}")
                 return True
             except Exception as e:
                 print(f"🚨 Excel save failed: {str(e)}")
@@ -269,7 +289,11 @@ def save_content(content, content_type, output_path, source_url=None):
     # Handle links
     elif content_type == 'links':
         # Create DataFrame from links
-        df = pd.DataFrame(content)
+        try:
+            df = pd.DataFrame(content)
+        except Exception as e:
+            print(f"🚨 Link processing failed: {str(e)}")
+            return False
         
         if output_path.endswith('.txt'):
             try:
@@ -410,10 +434,19 @@ def main():
         
     elif mode == '2':
         # Multiple URL processing
-        urls_input = input("\nEnter URLs (space/comma separated):\n> ").strip()
-        
-        # Split URLs using both spaces and commas
-        raw_urls = re.split(r'[,\s]+', urls_input)
+        print("\nEnter URLs (space/comma separated, multiple lines allowed):")
+        print("Press Enter twice when finished")
+        lines = []
+        while True:
+            line = input("> ").strip()
+            if line:
+                lines.append(line)
+            else:
+                break
+                
+        # Combine all lines
+        combined_input = " ".join(lines)
+        raw_urls = re.split(r'[,\s]+', combined_input)
         urls = []
         
         # Process each URL
@@ -463,29 +496,54 @@ def main():
                 elif '.' not in filename:
                     filename += f".{default_ext}"
                     
-                all_content = []
-                for i, (url, num_pages) in enumerate(urls):
-                    print(f"\nProcessing URL {i+1}/{len(urls)}: {url}")
-                    content = extract_url(
-                        url, content_type, 
-                        classes=classes, 
-                        ids=ids, 
-                        link_classes=link_classes, 
-                        num_pages=num_pages
-                    )
+                # For tables, save each URL to separate sheet
+                if content_type == 'tables':
+                    try:
+                        import openpyxl
+                        with pd.ExcelWriter(filename) as writer:
+                            for i, (url, num_pages) in enumerate(urls):
+                                print(f"\nProcessing URL {i+1}/{len(urls)}: {url}")
+                                content = extract_url(
+                                    url, content_type, 
+                                    classes=classes, 
+                                    ids=ids, 
+                                    link_classes=link_classes, 
+                                    num_pages=num_pages
+                                )
+                                
+                                if content:
+                                    # Combine all tables from this URL
+                                    combined = pd.concat(content, ignore_index=True)
+                                    
+                                    # Create sheet name
+                                    domain = urlparse(url).netloc.replace('www.', '')[:15]
+                                    sheet_name = clean_sheet_name(f"{domain}_{i+1}")
+                                    combined.to_excel(writer, sheet_name=sheet_name, index=False)
+                                    print(f"  💾 Added sheet: {sheet_name}")
+                                else:
+                                    print(f"  ⚠️ No content for {url}")
+                            
+                            print(f"\n💾 Saved Excel with {len(urls)} sheets: {os.path.abspath(filename)}")
+                    except Exception as e:
+                        print(f"🚨 Excel save failed: {str(e)}")
+                else:  # Links
+                    all_content = []
+                    for i, (url, num_pages) in enumerate(urls):
+                        print(f"\nProcessing URL {i+1}/{len(urls)}: {url}")
+                        content = extract_url(
+                            url, content_type, 
+                            classes=classes, 
+                            ids=ids, 
+                            link_classes=link_classes, 
+                            num_pages=num_pages
+                        )
+                        if content:
+                            all_content.extend(content)
                     
-                    if content:
-                        all_content.extend(content)
-                
-                if all_content:
-                    if content_type == 'tables':
-                        # Combine all tables into single DataFrame
-                        combined = pd.concat(all_content, ignore_index=True)
-                        save_content([combined], content_type, filename)
-                    else:  # Links
+                    if all_content:
                         save_content(all_content, content_type, filename)
-                else:
-                    print("\n❌ No content extracted from any URLs")
+                    else:
+                        print("\n❌ No content extracted from any URLs")
                 
         if output_mode == '2':  # Multiple files
             output_dir = input("\nEnter output directory (default: current directory):\n> ").strip()
