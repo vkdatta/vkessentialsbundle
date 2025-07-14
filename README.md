@@ -27,7 +27,7 @@ __Copy a file’s contents to clipboard__
 ```bash
 copy xyz.py
 ```
-Copies everything inside xyz.py into your Termux clipboard.
+Copies everything inside xyz.py into your clipboard.
 
 __Erase a file’s contents__
 
@@ -42,6 +42,26 @@ __Overwrite file with clipboard__
 overwrite draft.md
 ```
 Pastes whatever’s in your clipboard into draft.md, replacing its previous contents.
+
+__xtract__
+
+```bash
+xtract
+```
+
+And Enter.
+
+This asks URL. 
+
+Enter the URL if you are extracting a single page and enter.
+If there are multiple pages attached to a single URL, Like:
+
+xyz.com/list/1
+xyz.com/list/2
+xyz.com/list/3
+
+Enter: xyz.com/list/{}
+And in the number of pages prompt, enter 3
 
 ## Pre Requirements
 
