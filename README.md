@@ -42,5 +42,32 @@ Pastes whatever’s in your clipboard into draft.md, replacing its previous cont
 ## Pre Requirements
 
 ```bash
+pkg install termux-api
+pkg install python -y
+pkg install root-repo
+pkg uninstall tur-repo -y
+pkg update -y
+pkg upgrade -y
+pkg install tur-repo -y
+pkg install clang libopenblas libffi libzmq build-essential -y
+```
+```bash
+pkg update
+pkg install clang make cmake pkg-config
+pkg install python-dev
+pkg install ninja
+pkg install libandroid-spawn
+pkg install libffi-dev
+```
+```bash
+pip install numpy
+```
+```bash
+pip install pandas
+```
+```bash
 pkg install -y termux-api python git curl
+```
+```bash
+pip install requests pandas beautifulsoup4 tqdm
 ```
