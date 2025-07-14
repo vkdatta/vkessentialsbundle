@@ -8,6 +8,12 @@ A small handy bundle for Termux that lets you copy, erase, and overwrite files v
 pip install git+https://github.com/vkdatta/vkessentialsbundle.git
 ```
 
+## Upgrade 
+
+```bash
+pip3 install --upgrade --force-reinstall git+https://github.com/vkdatta/vkessentialsbundle.git
+```
+
 ## Usage
 
 __Copy a file’s contents to clipboard__
