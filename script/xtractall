@@ -87,25 +87,26 @@ def manual_table_extraction(table):
         headers = []
         header_row = None
         
-# 1. Try a real <thead>
-thead = table.find('thead')
-if thead:
-    for row in thead.find_all('tr'):
-        for th in row.find_all(['th', 'td']):
-            headers.append(th.get_text(strip=True))
-
-# 2. Else if there are any <th> anywhere, use those
-elif table.find_all('th'):
-    for th in table.find_all('th'):
-        headers.append(th.get_text(strip=True))
-
-# 3. Else fall back to the very first row’s cells
-else:
-    first_row = table.find('tr')
-    if first_row:
-        for cell in first_row.find_all(['th', 'td']):
-            headers.append(cell.get_text(strip=True))
-
+        # 1. Look for thead section
+        thead = table.find('thead')
+        if thead:
+            for row in thead.find_all('tr'):
+                for th in row.find_all(['th', 'td']):
+                    headers.append(th.get_text(strip=True))
+        
+        # 2. If no thead, look for th elements in the table
+        if not headers:
+            for th in table.find_all('th'):
+                headers.append(th.get_text(strip=True))
+        
+        # 3. If still no headers, use first row as headers
+        if not headers:
+            first_row = table.find('tr')
+            if first_row:
+                header_row = first_row
+                for cell in first_row.find_all(['th', 'td']):
+                    headers.append(cell.get_text(strip=True))
+        
         # Extract data rows
         rows = []
         tbody = table.find('tbody') or table  # Fallback to entire table if no tbody
@@ -122,10 +123,11 @@ else:
         
         # Find max columns to ensure consistent shape
         max_columns = max(len(row) for row in rows) if rows else 0
-        if len(headers) > max_columns:
-            headers = headers[:max_columns]
-        elif len(headers) < max_columns:
-            headers += [f"Column_{i+1}" for i in range(len(headers), max_columns)]
+        if headers:
+            if len(headers) > max_columns:
+                headers = headers[:max_columns]
+            elif len(headers) < max_columns:
+                headers += [f"Column_{i+1}" for i in range(len(headers), max_columns)]
         
         # Pad rows to match column count
         padded_rows = []
