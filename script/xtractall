@@ -231,8 +231,36 @@ def extract_url(url, content_type, classes=None, ids=None, link_classes=None, nu
     
     return all_content
 
+def group_tables(tables):
+    """Group consecutive tables with identical headers"""
+    if not tables:
+        return []
+    
+    groups = []
+    current_group = []
+    
+    for table in tables:
+        if not current_group:
+            current_group.append(table)
+            continue
+            
+        # Check if current table has same headers as last table in current group
+        prev_headers = list(current_group[-1].columns)
+        curr_headers = list(table.columns)
+        
+        if curr_headers == prev_headers:
+            current_group.append(table)
+        else:
+            groups.append(current_group)
+            current_group = [table]
+    
+    if current_group:
+        groups.append(current_group)
+        
+    return groups
+
 def save_tables_with_gap(tables, output_path, source_url=None):
-    """Save tables with 5-row gaps between them"""
+    """Save tables with 5-row gaps between groups of tables with different headers"""
     try:
         import openpyxl
         from openpyxl.utils.dataframe import dataframe_to_rows
@@ -251,32 +279,36 @@ def save_tables_with_gap(tables, output_path, source_url=None):
         sheet_name = clean_sheet_name(sheet_name)
         worksheet = workbook.create_sheet(sheet_name)
         
+        # Group tables by header similarity
+        table_groups = group_tables(tables)
+        
         # Start writing from row 1
         current_row = 1
         
-        for i, table in enumerate(tables):
-            # Add table number header
-            worksheet.cell(row=current_row, column=1, value=f"Table {i+1}")
+        for group_idx, group in enumerate(table_groups):
+            # Write group label
+            worksheet.cell(row=current_row, column=1, value=f"Table Group {group_idx+1}")
             current_row += 1
             
-            # Write table header
-            headers = table.columns.tolist()
+            # Write header (only once per group)
+            headers = group[0].columns.tolist()
             for col_idx, header in enumerate(headers, 1):
                 worksheet.cell(row=current_row, column=col_idx, value=header)
             current_row += 1
             
-            # Write table data
-            for row_idx, row in table.iterrows():
-                for col_idx, value in enumerate(row, 1):
-                    worksheet.cell(row=current_row, column=col_idx, value=value)
-                current_row += 1
+            # Write all tables in the group without gaps
+            for table in group:
+                for row_idx, row in table.iterrows():
+                    for col_idx, value in enumerate(row, 1):
+                        worksheet.cell(row=current_row, column=col_idx, value=value)
+                    current_row += 1
             
-            # Add 5-row gap after table
+            # Add 5-row gap after group
             current_row += 5
         
         # Save workbook
         workbook.save(output_path)
-        print(f"💾 Saved Excel with {len(tables)} tables: {os.path.abspath(output_path)}")
+        print(f"💾 Saved Excel with {len(table_groups)} table groups: {os.path.abspath(output_path)}")
         return True
     except Exception as e:
         print(f"🚨 Excel save failed: {str(e)}")
@@ -539,27 +571,31 @@ def main():
                                 sheet_name = clean_sheet_name(f"{domain}_{i+1}")
                                 worksheet = workbook.create_sheet(sheet_name)
                                 
+                                # Group tables by header similarity
+                                table_groups = group_tables(content)
+                                
                                 # Start writing from row 1
                                 current_row = 1
                                 
-                                for table_idx, table in enumerate(content):
-                                    # Add table number header
-                                    worksheet.cell(row=current_row, column=1, value=f"Table {table_idx+1}")
+                                for group_idx, group in enumerate(table_groups):
+                                    # Write group label
+                                    worksheet.cell(row=current_row, column=1, value=f"Table Group {group_idx+1}")
                                     current_row += 1
                                     
-                                    # Write table header
-                                    headers = table.columns.tolist()
+                                    # Write header (only once per group)
+                                    headers = group[0].columns.tolist()
                                     for col_idx, header in enumerate(headers, 1):
                                         worksheet.cell(row=current_row, column=col_idx, value=header)
                                     current_row += 1
                                     
-                                    # Write table data
-                                    for row_idx, row in table.iterrows():
-                                        for col_idx, value in enumerate(row, 1):
-                                            worksheet.cell(row=current_row, column=col_idx, value=value)
-                                        current_row += 1
+                                    # Write all tables in the group without gaps
+                                    for table in group:
+                                        for row_idx, row in table.iterrows():
+                                            for col_idx, value in enumerate(row, 1):
+                                                worksheet.cell(row=current_row, column=col_idx, value=value)
+                                            current_row += 1
                                     
-                                    # Add 5-row gap after table
+                                    # Add 5-row gap after group
                                     current_row += 5
                                 
                                 print(f"  💾 Added sheet: {sheet_name}")
