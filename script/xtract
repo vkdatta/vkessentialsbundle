@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Robust web table extractor tool
-Extracts HTML tables from websites using table IDs
-"""
-
 import requests
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -18,33 +12,23 @@ def clean_sheet_name(name):
     return re.sub(r'[\\/*?:\[\]]', '', name)[:30]
 
 def manual_table_extraction(table):
-    """Robust table extraction that handles various HTML structures"""
-    # Extract headers from th elements
+    """Manually extract table data from BeautifulSoup table object"""
+    # Extract headers
     headers = []
-    header_rows = table.find_all(['tr', 'thead'])
+    thead = table.find('thead')
+    if thead:
+        for th in thead.find_all('th'):
+            headers.append(th.get_text(strip=True))
     
-    # Try to find headers in thead or first row
-    for row in header_rows:
-        if row.name == 'thead':
-            headers = [th.get_text(strip=True) for th in row.find_all(['th', 'td'])]
-            break
-        elif row.find('th'):
-            headers = [th.get_text(strip=True) for th in row.find_all(['th', 'td'])]
-            break
-    
-    # Extract all data rows
+    # Extract rows
     rows = []
-    body = table.find('tbody') or table  # Use tbody if exists, otherwise whole table
-    
-    for row in body.find_all('tr'):
-        # Skip rows that are part of the header
-        if row in header_rows:
-            continue
-            
-        cols = row.find_all('td')
-        if cols:  # Only process rows with data cells
-            row_data = [col.get_text(strip=True) for col in cols]
-            rows.append(row_data)
+    tbody = table.find('tbody')
+    if tbody:
+        for row in tbody.find_all('tr'):
+            cols = row.find_all('td')
+            if cols:  # Skip empty rows
+                row_data = [col.get_text(strip=True) for col in cols]
+                rows.append(row_data)
     
     # Create DataFrame
     if headers and rows:
@@ -54,11 +38,10 @@ def manual_table_extraction(table):
     else:
         return None
 
-def extract_tables_robust(url, table_id=None):
+def extract_tables_robust(url, table_class=None):
     """Reliable table extraction that works for complex sites"""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.9"
     }
     
     try:
@@ -66,9 +49,8 @@ def extract_tables_robust(url, table_id=None):
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
         
-        if table_id:
-            table = soup.find('table', id=table_id)
-            tables = [table] if table else []
+        if table_class:
+            tables = soup.find_all('table', class_=table_class)
         else:
             tables = soup.find_all('table')
             
@@ -78,41 +60,32 @@ def extract_tables_robust(url, table_id=None):
         return []
 
 def main():
-    print("🔍 Xtract - Web Table Extraction Tool")
-    print("=" * 50)
+    print("🔍 Robust Web Table Extractor")
+    print("=" * 45)
     
     # Get user inputs
-    base_url = input("\nEnter website URL (use {} for page numbers):\n> ").strip()
-    has_pagination = "{}" in base_url
-    num_pages = 1
+    base_url = input("\nEnter website URL pattern (use {} for page number):\n> ")
+    num_pages = int(input("\nEnter number of pages to scrape:\n> ") or 1)
+    filename = input("\nEnter output filename (e.g., data.csv or data.xlsx):\n> ")
+    table_class = input("\nEnter table class (optional, press Enter to extract all tables):\n> ").strip() or None
     
-    if has_pagination:
-        try:
-            num_pages = int(input("\nEnter number of pages to scrape:\n> ") or 1)
-        except ValueError:
-            num_pages = 1
-            print("⚠️ Using default 1 page")
-
-    filename = input("\nEnter output filename (e.g., data.csv or data.xlsx):\n> ").strip()
-    table_id = input("\nEnter table ID (optional, press Enter to extract all tables):\n> ").strip() or None
-    
-    if not table_id:
-        print("\n⚠️ Warning: Extracting ALL tables. This may result in large output files!")
+    if not table_class:
+        print("\n⚠️ Warning: Extracting ALL tables. This may result in messy output!")
         proceed = input("Continue? (y/n): ").lower()
         if proceed != 'y':
-            print("🚫 Operation cancelled")
+            print("Operation cancelled.")
             return
     
     all_data = []
-    page_range = range(1, num_pages + 1) if has_pagination else [1]
+    page_range = range(1, num_pages + 1) if "{}" in base_url else [1]
     
     print(f"\n⏳ Scraping {len(page_range)} pages...")
     
     # Scrape pages with robust error handling
-    for page in tqdm(page_range, desc="Processing Pages"):
+    for page in tqdm(page_range):
         try:
-            url = base_url.format(page) if has_pagination else base_url
-            tables = extract_tables_robust(url, table_id)
+            url = base_url.format(page) if "{}" in base_url else base_url
+            tables = extract_tables_robust(url, table_class)
             
             if not tables:
                 print(f"  ⚠️ No tables found on page {page}")
@@ -120,6 +93,7 @@ def main():
             
             for i, table in enumerate(tables):
                 try:
+                    # Use manual extraction instead of pd.read_html()
                     df = manual_table_extraction(table)
                     
                     if df is None or df.empty:
@@ -133,7 +107,7 @@ def main():
                         df['Page_Number'] = page
                     
                     all_data.append(df)
-                    print(f"  ✅ Page {page}: Extracted table {i+1} ({len(df)} rows)")
+                    print(f"  ✅ Processed table {i+1} ({len(df)} rows)")
                     
                 except Exception as e:
                     print(f"  ⚠️ Error processing table {i+1}: {str(e)}")
@@ -141,39 +115,39 @@ def main():
         except Exception as e:
             print(f"🚨 Page {page} failed: {str(e)}")
         
-        time.sleep(1.5)  # Delay between requests
+        time.sleep(1.5)  # Increased delay
     
     # Process and save results
     if not all_data:
         print("\n❌ No tables extracted. Possible issues:")
-        print("  - Website requires JavaScript rendering")
-        print("  - Table ID incorrect")
+        print("  - Website requires JavaScript")
+        print("  - Table class incorrect")
         print("  - Website blocking scrapers")
-        print("  - Try using browser developer tools to inspect table structure")
         return
     
     print(f"\n✅ Extracted {len(all_data)} tables with {sum(len(df) for df in all_data)} total rows")
     
     # Save results
-    output_path = os.path.abspath(filename)
     if filename.endswith('.csv'):
         combined = pd.concat(all_data, ignore_index=True)
         combined.to_csv(filename, index=False)
-        print(f"💾 Saved CSV: {output_path}")
+        print(f"💾 Saved CSV: {os.path.abspath(filename)}")
     
     elif filename.endswith('.xlsx'):
         with pd.ExcelWriter(filename) as writer:
-            if table_id:
+            if table_class:
+                # Combine tables when class is specified
                 combined = pd.concat(all_data, ignore_index=True)
                 combined.to_excel(writer, sheet_name="Combined", index=False)
-                print(f"💾 Saved Excel with combined sheet: {output_path}")
+                print(f"💾 Saved Excel with combined sheet: {os.path.abspath(filename)}")
             else:
+                # Save each table separately
                 for idx, df in enumerate(all_data):
                     page_num = df['Page_Number'].iloc[0] if 'Page_Number' in df.columns else 1
-                    sheet_name = f"Page{page_num}_Table{idx+1}"
+                    sheet_name = f"Page{page_num}_Table{df['Table_Index'].iloc[0]}"
                     sheet_name = clean_sheet_name(sheet_name)
                     df.to_excel(writer, sheet_name=sheet_name, index=False)
-                print(f"💾 Saved Excel with {len(all_data)} sheets: {output_path}")
+                print(f"💾 Saved Excel with {len(all_data)} sheets: {os.path.abspath(filename)}")
     else:
         print("❌ Unsupported format. Use .csv or .xlsx")
 
