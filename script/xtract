@@ -51,16 +51,15 @@ def main():
     parser.add_argument('url', nargs='?', help='Website URL pattern (use {} for page numbers)')
     args = parser.parse_args()
 
-    print("🔍 Robust Web Table Extractor")
-    print("=" * 45)
+    print("Web Table Extractor:")
     
-    base_url = args.url if args.url else input("\nEnter website URL pattern (use {} for page number):\n> ")
-    num_pages = int(input("\nEnter number of pages to scrape:\n> ") or 1)
+    base_url = args.url if args.url else input("\nEnter URL (use {} at the end instead of page number if the URL has page number):\n> ")
+    num_pages = int(input("\nEnter number of pages to scrape (optional, press Enter to extract single page): \n> ") or 1)
     filename = input("\nEnter output filename (e.g., data.csv or data.xlsx):\n> ")
     table_class = input("\nEnter table class (optional, press Enter to extract all tables):\n> ").strip() or None
     
     if not table_class:
-        print("\n⚠️ Warning: Extracting ALL tables. This may result in messy output!")
+        print("\n⚠️ Warning: Extracting ALL tables. This may result in large output!")
         proceed = input("Continue? (y/n): ").lower()
         if proceed != 'y':
             print("Operation cancelled.")
