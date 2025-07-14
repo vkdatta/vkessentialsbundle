@@ -79,22 +79,56 @@ def extract_links_from_container(container, link_classes=None):
     return links
 
 def manual_table_extraction(table):
-    """Manually extract table data from BeautifulSoup table object"""
+    """Robust table extraction that handles tables without thead"""
     headers = []
+    header_candidates = []
+    
+    # First try: look for thead
     thead = table.find('thead')
     if thead:
         for th in thead.find_all('th'):
             headers.append(th.get_text(strip=True))
     
-    rows = []
-    tbody = table.find('tbody')
-    if tbody:
-        for row in tbody.find_all('tr'):
-            cols = row.find_all('td')
-            if cols:  # Skip empty rows
-                row_data = [col.get_text(strip=True) for col in cols]
-                rows.append(row_data)
+    # Second try: look for th in the first row
+    if not headers:
+        first_row = table.find('tr')
+        if first_row:
+            for cell in first_row.find_all(['th', 'td']):
+                if cell.name == 'th':
+                    headers.append(cell.get_text(strip=True))
+                else:
+                    # If we find a td, but no ths yet, consider it might be a header row
+                    header_candidates.append(cell.get_text(strip=True))
     
+    # Third try: use header candidates if we found any
+    if not headers and header_candidates:
+        headers = header_candidates
+    
+    # Final fallback: use column numbers if no headers found
+    if not headers:
+        # Find max columns to determine header count
+        max_cols = 0
+        for row in table.find_all('tr'):
+            cols = row.find_all(['td', 'th'])
+            if len(cols) > max_cols:
+                max_cols = len(cols)
+        if max_cols > 0:
+            headers = [f"Column_{i+1}" for i in range(max_cols)]
+    
+    # Extract data rows
+    rows = []
+    tbody = table.find('tbody') or table  # Fallback to entire table if no tbody
+    for row in tbody.find_all('tr'):
+        # Skip header row if we identified it
+        if row == first_row:
+            continue
+            
+        cols = row.find_all(['td', 'th'])
+        if cols:
+            row_data = [col.get_text(strip=True) for col in cols]
+            rows.append(row_data)
+    
+    # Create DataFrame
     if headers and rows:
         return pd.DataFrame(rows, columns=headers)
     elif rows:
@@ -167,10 +201,6 @@ def extract_url(url, content_type, classes=None, ids=None, link_classes=None, nu
             # Process tables
             if content_type == 'tables':
                 for i, df in enumerate(content):
-                    df['Source_URL'] = target_url
-                    df['Table_Index'] = i + 1
-                    if len(page_range) > 1:
-                        df['Page_Number'] = page
                     all_content.append(df)
                     print(f"    ✅ Extracted table {i+1} ({len(df)} rows)")
             
@@ -180,9 +210,6 @@ def extract_url(url, content_type, classes=None, ids=None, link_classes=None, nu
                     # Make absolute URL
                     absolute_url = urljoin(target_url, link['url'])
                     link['absolute_url'] = absolute_url
-                    link['source_url'] = target_url
-                    if len(page_range) > 1:
-                        link['page_number'] = page
                 all_content.extend(content)
                 print(f"    ✅ Extracted {len(content)} links")
                 
@@ -206,9 +233,11 @@ def save_content(content, content_type, output_path, source_url=None):
     
     # Handle tables
     if content_type == 'tables':
+        # Combine all tables from same URL
+        combined = pd.concat(content, ignore_index=True)
+        
         if output_path.endswith('.csv'):
             try:
-                combined = pd.concat(content, ignore_index=True)
                 combined.to_csv(output_path, index=False)
                 print(f"💾 Saved CSV: {os.path.abspath(output_path)}")
                 return True
@@ -228,9 +257,6 @@ def save_content(content, content_type, output_path, source_url=None):
                 
             try:
                 with pd.ExcelWriter(output_path) as writer:
-                    # Combine all tables from same URL into one sheet
-                    combined = pd.concat(content, ignore_index=True)
-                    
                     # Create meaningful sheet name
                     if source_url:
                         domain = urlparse(source_url).netloc.replace('www.', '')[:15]
@@ -240,7 +266,7 @@ def save_content(content, content_type, output_path, source_url=None):
                     
                     sheet_name = clean_sheet_name(sheet_name)
                     combined.to_excel(writer, sheet_name=sheet_name, index=False)
-                    print(f"💾 Saved Excel with combined sheet: {os.path.abspath(output_path)}")
+                    print(f"💾 Saved Excel: {os.path.abspath(output_path)}")
                 return True
             except Exception as e:
                 print(f"🚨 Excel save failed: {str(e)}")
@@ -252,6 +278,9 @@ def save_content(content, content_type, output_path, source_url=None):
     
     # Handle links
     elif content_type == 'links':
+        # Create DataFrame from links
+        df = pd.DataFrame(content)
+        
         if output_path.endswith('.txt'):
             try:
                 with open(output_path, 'w') as f:
@@ -263,44 +292,40 @@ def save_content(content, content_type, output_path, source_url=None):
                 print(f"🚨 TXT save failed: {str(e)}")
                 return False
         
-        elif output_path.endswith('.csv') or output_path.endswith('.xlsx'):
-            # Create DataFrame from links
-            df = pd.DataFrame(content)
+        elif output_path.endswith('.csv'):
+            try:
+                df.to_csv(output_path, index=False)
+                print(f"💾 Saved CSV: {os.path.abspath(output_path)}")
+                return True
+            except Exception as e:
+                print(f"🚨 CSV save failed: {str(e)}")
+                return False
             
-            if output_path.endswith('.csv'):
-                try:
-                    df.to_csv(output_path, index=False)
-                    print(f"💾 Saved CSV: {os.path.abspath(output_path)}")
-                    return True
-                except Exception as e:
-                    print(f"🚨 CSV save failed: {str(e)}")
-                    return False
+        elif output_path.endswith('.xlsx'):
+            try:
+                import openpyxl
+            except ImportError:
+                print("❌ Excel support requires openpyxl package")
+                print("Saving as CSV instead")
+                csv_path = os.path.splitext(output_path)[0] + '.csv'
+                return save_content(content, content_type, csv_path, source_url)
             
-            else:  # Excel
-                try:
-                    import openpyxl
-                except ImportError:
-                    print("❌ Excel support requires openpyxl package")
-                    print("Saving as CSV instead")
-                    csv_path = os.path.splitext(output_path)[0] + '.csv'
-                    return save_content(content, content_type, csv_path, source_url)
-                
-                try:
-                    with pd.ExcelWriter(output_path) as writer:
-                        # Create meaningful sheet name
-                        if source_url:
-                            domain = urlparse(source_url).netloc.replace('www.', '')[:15]
-                            sheet_name = f"{domain}_Links"
-                        else:
-                            sheet_name = "Links"
-                        
-                        sheet_name = clean_sheet_name(sheet_name)
-                        df.to_excel(writer, sheet_name=sheet_name, index=False)
-                        print(f"💾 Saved Excel: {os.path.abspath(output_path)}")
-                    return True
-                except Exception as e:
-                    print(f"🚨 Excel save failed: {str(e)}")
-                    return False
+            try:
+                with pd.ExcelWriter(output_path) as writer:
+                    # Create meaningful sheet name
+                    if source_url:
+                        domain = urlparse(source_url).netloc.replace('www.', '')[:15]
+                        sheet_name = f"{domain}_Links"
+                    else:
+                        sheet_name = "Links"
+                    
+                    sheet_name = clean_sheet_name(sheet_name)
+                    df.to_excel(writer, sheet_name=sheet_name, index=False)
+                    print(f"💾 Saved Excel: {os.path.abspath(output_path)}")
+                return True
+            except Exception as e:
+                print(f"🚨 Excel save failed: {str(e)}")
+                return False
         
         else:
             print("❌ Unsupported format. Using default: links.txt")
@@ -359,7 +384,7 @@ def main():
         
         # Class/ID handling
         if content_type == 'tables':
-            table_classes = parse_comma_separated(
+            classes = parse_comma_separated(
                 input("\nEnter table class(es) (optional, comma separated):\n> ").strip()
             )
             ids = parse_comma_separated(
@@ -380,8 +405,14 @@ def main():
         filename = input(f"\nEnter output filename (default: {default_name}):\n> ").strip() or default_name
         
         # Extract and save
-        content = extract_url(url, content_type, classes=table_classes, 
-                             ids=ids, link_classes=link_classes, num_pages=num_pages)
+        content = extract_url(
+            url, 
+            content_type, 
+            classes=classes, 
+            ids=ids, 
+            link_classes=link_classes, 
+            num_pages=num_pages
+        )
         if content:
             save_content(content, content_type, filename, url)
         else:
@@ -413,7 +444,7 @@ def main():
         
         # Class/ID handling for multiple URLs
         if content_type == 'tables':
-            table_classes = parse_comma_separated(
+            classes = parse_comma_separated(
                 input("\nEnter table class(es) (optional, comma separated):\n> ").strip()
             )
             ids = parse_comma_separated(
@@ -447,78 +478,20 @@ def main():
                     print(f"\nProcessing URL {i+1}/{len(urls)}: {url}")
                     content = extract_url(
                         url, content_type, 
-                        classes=table_classes, 
+                        classes=classes, 
                         ids=ids, 
                         link_classes=link_classes, 
                         num_pages=num_pages
                     )
                     
                     if content:
-                        # For tables, combine all from same URL
-                        if content_type == 'tables':
-                            combined_df = pd.concat(content, ignore_index=True)
-                            combined_df['URL_Index'] = i + 1
-                            all_content.append(combined_df)
-                        else:  # Links
-                            all_content.extend(content)
+                        all_content.extend(content)
                 
                 if all_content:
                     if content_type == 'tables':
-                        # Save all URLs' tables in different sheets
-                        try:
-                            import openpyxl
-                            with pd.ExcelWriter(filename) as writer:
-                                for i, df in enumerate(all_content):
-                                    sheet_name = clean_sheet_name(f"URL_{i+1}")
-                                    df.to_excel(writer, sheet_name=sheet_name, index=False)
-                                print(f"💾 Saved Excel with {len(all_content)} sheets: {os.path.abspath(filename)}")
-                                
-                                print("\n" + "="*50)
-                                print("💡 To merge sheets in Excel:")
-                                print("1. Open the Excel file")
-                                print("2. Press Alt+F11 to open VBA editor")
-                                print("3. Insert > Module and paste this code:")
-                                print("""
-Sub MergeAllSheets()
-    Dim ws As Worksheet
-    Dim newWs As Worksheet
-    Dim lastRow As Long
-    Dim destRow As Long
-    
-    ' Create new sheet for consolidated data
-    Set newWs = ThisWorkbook.Sheets.Add(Before:=Sheets(1))
-    newWs.Name = "Consolidated"
-    destRow = 1
-    
-    ' Copy data from all sheets
-    For Each ws In ThisWorkbook.Sheets
-        If ws.Name <> newWs.Name Then
-            lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
-            If lastRow > 1 Then
-                ' Copy headers only once
-                If destRow = 1 Then
-                    ws.Rows(1).Copy newWs.Cells(destRow, 1)
-                    destRow = destRow + 1
-                End If
-                
-                ' Copy data rows
-                ws.Range("A2:" & ws.Cells(lastRow, ws.Columns.Count).End(xlToLeft).Address).Copy _
-                    newWs.Cells(destRow, 1)
-                destRow = destRow + (lastRow - 1)
-            End If
-        End If
-    Next ws
-    
-    ' Clean up
-    newWs.Columns.AutoFit
-    Set newWs = Nothing
-    MsgBox "Data consolidated successfully!", vbInformation
-End Sub
-                                """)
-                                print("4. Place cursor inside the Macro and press F5 to run")
-                                print("="*50)
-                        except:
-                            print("❌ Failed to save multi-sheet Excel")
+                        # Combine all tables into single DataFrame
+                        combined = pd.concat(all_content, ignore_index=True)
+                        save_content([combined], content_type, filename)
                     else:  # Links
                         save_content(all_content, content_type, filename)
                 else:
@@ -533,17 +506,13 @@ End Sub
                 print(f"\nProcessing URL {i+1}/{len(urls)}: {url}")
                 content = extract_url(
                     url, content_type, 
-                    classes=table_classes, 
+                    classes=classes, 
                     ids=ids, 
                     link_classes=link_classes, 
                     num_pages=num_pages
                 )
                 
                 if content:
-                    # For tables, combine all from same URL
-                    if content_type == 'tables':
-                        content = [pd.concat(content, ignore_index=True)]
-                    
                     filename = generate_filename(url, i, 
                         'xlsx' if content_type == 'tables' else 'txt'
                     )
