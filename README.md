@@ -7,7 +7,7 @@ Plus ```xtract``` web scraper tool that extracts link/tables from multiple web p
 ## Installation
 
 ```bash
-pip install git+https://github.com/vkdatta/vkessentialsbundle.git
+pip install git+https://github.com/vkdatta/termuxessentialsbyvk.git
 ```
 
 ## Upgrade
@@ -17,7 +17,7 @@ If the ```copy```, ```erase```, ```overwrite```, ```xtract``` commands are not w
 As this is a tiny personal project, no upgrades are directly provided, and all changes are made to the main version itself. So force install the code for better performance. 
 
 ```bash
-pip install --upgrade --force-reinstall git+https://github.com/vkdatta/vkessentialsbundle.git
+pip install --upgrade --force-reinstall git+https://github.com/vkdatta/termuxessentialsbyvk.git
 ```
 
 ## Usage
