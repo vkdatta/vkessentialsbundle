@@ -1,25 +1,3 @@
-# 🚀 Termux Web Extractor Pro
-
-**Advanced web scraping toolkit for Termux with file utilities**  
-Extract tables/links from websites with precision + powerful file management tools
-
-[![Termux](https://img.shields.io/badge/Termux-000000?style=flat&logo=termux)](https://termux.com/)
-[![Python](https://img.shields.io/badge/Python-3.8%2B-blue?logo=python)](https://python.org)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-
-<img src="https://github.com/vkdatta/vkessentialsbundle/assets/29627898/5d3d8a7d-5c5d-4b2d-9d8e-0d7d6e3b3e1f" width="800" alt="Termux Web Extractor Demo">
-
-## 🔥 Key Features
-- **Advanced Web Scraping**: Extract tables/links from single or multiple websites
-- **Smart Pagination**: Handle multi-page content with `{page}` syntax
-- **Excel/CSV Export**: Save data in analysis-ready formats
-- **File Utilities**: Clipboard file operations
-- **Robust Extraction**: Handles complex websites with missing HTML structures
-
-## 💻 Installation
-```bash
-pip install git+https://github.com/vkdatta/vkessentialsbundle.git
-
 ## vkessentialsbundle
 
 A small handy bundle for Termux that lets you ```copy```, ```erase```, and ```overwrite``` contents inside a file via these simple commands. 
