@@ -27,14 +27,14 @@ pip install --upgrade --force-reinstall git+https://github.com/vkdatta/vkessenti
 | ```copy <filename>``` | ```copy xyz.py``` | Copies everything inside xyz.py into your clipboard. |
 | ```erase <filename>``` | ```erase notes.txt``` | erases content of notes.txt. |
 | ```overwrite <filename>``` | ```overwrite draft.md``` | overwrites/replaces draft.md content With text in your clipboard |
-| ```xtract``` | ```xtract``` | Lets you extract links/tables from webpages |
+| ```xtract``` | ```xtract``` | Lets you extract links/tables from websites |
 
 ____
 
 Here,  
+Enter: ```xyz.com/list/``` to extract tables/links from that page only  
 Enter: ```xyz.com/list/100``` to extract tables/links from 100th page only  
 Enter: ```xyz.com/list/{100}``` to extract tables/links from 1st page to 100th page  
-Enter: ```xyz.com/list/``` to extract tables/links from that page only  
 
 In addition, You can use multiple URLs from multiple sites using space/comma separation!! Also you can extract only tables/links from specific IDs or Classes
 
