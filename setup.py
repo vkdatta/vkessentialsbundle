@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
   name='termuxessentialsbyvk',
   version='0.0',
-  description='Termux clipboard copy/erase/overwrite utilities',
+  description='A lightweight Termux toolkit to copy, erase, overwrite file content and scrape web tables/links with a single command.',
   author='vkd',
     scripts=['script/copy','script/erase','script/overwrite','script/xtract'],
   python_requires='>=3.6',
