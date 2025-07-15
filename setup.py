@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-  name='vkessentialsbundle',
+  name='termuxessentialsbyvk',
   version='0.1.0',
   description='Termux clipboard copy/erase/overwrite utilities',
   author='vkd',
