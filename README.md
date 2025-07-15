@@ -1,6 +1,6 @@
-## vkessentialsbundle
+## termuxessentialsbyvk
 
-A small handy bundle for Termux that lets you ```copy```, ```erase```, and ```overwrite``` contents inside a file via these simple commands. 
+A small toolkit for Termux that lets you ```copy```, ```erase```, and ```overwrite``` contents inside a file via these simple commands. 
 
 Plus ```xtract``` web scraper tool that extracts link/tables from multiple web pages!
 
