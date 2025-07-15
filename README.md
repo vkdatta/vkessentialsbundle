@@ -22,32 +22,14 @@ pip install --upgrade --force-reinstall git+https://github.com/vkdatta/vkessenti
 
 ## Usage
 
-__1. Copy a file’s contents to clipboard__
+| Command | Example | Usage |
+| --- | --- | --- |
+| ```copy <filename>``` | ```copy xyz.py``` | Copies everything inside xyz.py into your clipboard. |
+| ```erase <filename>``` | ```erase notes.txt``` | erases content of notes.txt. |
+| ```overwrite <filename>``` | ```overwrite draft.md``` | overwrites/replaces draft.md content With text in your clipboard |
+| ```xtract``` | ```xtract``` | Lets you extract links/tables from webpages |
 
-```bash
-copy xyz.py
-```
-Copies everything inside xyz.py into your clipboard.
-
-__2. Erase a file’s contents__
-
-```bash
-erase notes.txt
-```
-Prompts you yes/no; on yes, clears out notes.txt.
-
-__3. Overwrite file with clipboard__
-
-```bash
-overwrite draft.md
-```
-Pastes whatever’s in your clipboard into draft.md, replacing its previous contents.
-
-__4. extract tables and from a single URL or from a single URL that has multiple page numbers__
-
-```bash
-xtract
-```
+____
 
 Here,  
 Enter: ```xyz.com/list/100``` to extract tables/links from 100th page only  
