@@ -5,7 +5,7 @@ setup(
   version='0.1.0',
   description='Termux clipboard copy/erase/overwrite utilities',
   author='vkd',
-    scripts=['script/copy','script/erase','script/overwrite','script/xtract','script/xtract[1d].txt','script/xtract[2d].txt'],
+    scripts=['script/copy','script/erase','script/overwrite','script/xtract'],
   python_requires='>=3.6',
   classifiers=[
     'Programming Language :: Python :: 3',
