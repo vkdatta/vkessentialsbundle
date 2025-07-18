@@ -28,6 +28,7 @@ pip install --upgrade --force-reinstall git+https://github.com/vkdatta/termuxess
 | ```erase <filename>``` | ```erase notes.txt``` | erases content of notes.txt. |
 | ```overwrite <filename>``` | ```overwrite draft.md``` | overwrites/replaces draft.md content With text in your clipboard |
 | ```xtract``` | ```xtract``` | Lets you extract links/tables from websites |
+| ```list``` | ```list``` | Gives List of all files in your termux directory|
 
 ____
 
