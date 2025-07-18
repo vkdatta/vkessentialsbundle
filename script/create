@@ -1,1 +1,7 @@
-mkdir
+#!/data/data/com.termux/files/usr/bin/bash
+if [ -z "$1" ]; then
+  echo "Usage: create <foldername>"
+  exit 1
+fi
+mkdir "$1"
+echo "✅ Folder '$1' created."
