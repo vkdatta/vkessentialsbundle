@@ -1,19 +1,23 @@
-  local items=()
-  local path=".."
+  # where to list from; here "." means the current directory
+  local path="."
+  local items=()         # will hold the full paths
   local index=1
 
   echo "📂 Listing: $path"
   for item in "$path"/*; do
     items+=("$item")
-    echo "$index) $(basename "$item")"
+    printf "%2d) %s\n" "$index" "$(basename "$item")"
     index=$((index + 1))
   done
 
   echo
   read -p "Open — Type number from above: " choice
 
-  if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#items[@]}" ]; then
-    echo "Invalid selection."
+  # validate input
+  if ! [[ "$choice" =~ ^[0-9]+$ ]] \
+     || [ "$choice" -lt 1 ] \
+     || [ "$choice" -gt "${#items[@]}" ]; then
+    echo "Invalid selection." >&2
     return 1
   fi
 
@@ -21,12 +25,13 @@
 
   if [ -d "$selected" ]; then
     echo
-    echo "📁 It's a folder. Listing contents:"
+    echo "📁 Directory — listing contents:"
     ls "$selected"
   elif [ -f "$selected" ]; then
     echo
-    echo "📄 It's a file. Opening with nano..."
+    echo "📄 File — opening with nano:"
     nano "$selected"
   else
-    echo "❓ Not a regular file or folder."
+    echo "❓ Neither file nor directory!" >&2
+    return 1
   fi
