@@ -2,7 +2,10 @@
 
 A small toolkit for Termux that lets you ```copy```, ```erase```, and ```overwrite``` contents inside a file via these simple commands. 
 
-Plus ```xtract``` web scraper tool that extracts link/tables from multiple web pages!
+Plus more like -
+
+1. ```xtract``` web scraper tool that extracts link/tables from multiple web pages!
+2. ```list``` which gives list of all files in your termux directory
 
 ## Installation
 
@@ -28,11 +31,11 @@ pip install --upgrade --force-reinstall git+https://github.com/vkdatta/termuxess
 | ```erase <filename>``` | ```erase notes.txt``` | erases content of notes.txt. |
 | ```overwrite <filename>``` | ```overwrite draft.md``` | overwrites/replaces draft.md content With text in your clipboard |
 | ```xtract``` | ```xtract``` | Lets you extract links/tables from websites |
-| ```list``` | ```list``` | Gives List of all files in your termux directory|
+| ```list``` | ```list``` | Gives List of all files in your termux directory |
 
 ____
 
-Here,  
+For ```xtract```,  
 Enter: ```xyz.com/list/``` to extract tables/links from that page only  
 Enter: ```xyz.com/list/100``` to extract tables/links from 100th page only  
 Enter: ```xyz.com/list/{100}``` to extract tables/links from 1st page to 100th page  
