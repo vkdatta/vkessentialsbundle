@@ -1,57 +1,92 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# Smart folder navigator + file action chooser
+# Enhanced Smart folder navigator + file action chooser
 
+# If called without args, or with only "open", start interactive navigator
+# If called with a single arg:
+#   - if it's a directory: cd into it and start interactive navigator
+#   - if it's a file: prompt to open or edit immediately
+
+# Base path variable
 path="."
 
-while true; do
-  echo
-  echo "📂 Listing: $path"
-  items=()
-  idx=1
-  for item in "$path"/*; do
-    items+=( "$item" )
-    printf "%2d) %s\n" "$idx" "$(basename "$item")"
-    idx=$((idx+1))
-  done
-
-  echo
-  read -p "Open — Type number from above: " choice
-
-  if ! [[ "$choice" =~ ^[0-9]+$ ]] \
-     || [ "$choice" -lt 1 ] \
-     || [ "$choice" -gt "${#items[@]}" ]; then
-    echo "Invalid selection — try again." >&2
-    continue
-  fi
-
-  selected="${items[$((choice-1))]}"
-
-  if [ -d "$selected" ]; then
-    path="$selected"
-    continue
-  elif [ -f "$selected" ]; then
+# Helper: list items and prompt selection
+function navigator() {
+  while true; do
     echo
-    echo "📄 File selected: $(basename "$selected")"
-    echo "What would you like to do with the file?"
-    echo "1) Open using external tool (termux-open)"
-    echo "2) Edit using nano"
-    read -p "Enter 1 or 2: " action
+    echo "📂 Listing: $path"
+    items=()
+    idx=1
+    for item in "$path"/*; do
+      items+=( "$item" )
+      printf "%2d) %s\n" "$idx" "$(basename "$item")"
+      idx=$((idx+1))
+    done
 
-    case "$action" in
-      1)
-        termux-open "$selected"
-        ;;
-      2)
-        nano "$selected"
-        ;;
-      *)
-        echo "❌ Invalid option. Exiting."
-        ;;
-    esac
+    echo
+    read -p "Open — Type number from above: " choice
 
-    exit 0
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#items[@]}" ]; then
+      echo "Invalid selection — try again." >&2
+      continue
+    fi
+
+    selected="${items[$((choice-1))]}"
+
+    if [ -d "$selected" ]; then
+      path="$selected"
+      continue
+    elif [ -f "$selected" ]; then
+      file_action "$selected"
+      return
+    else
+      echo "❓ Not a file or folder — exiting."
+      exit 1
+    fi
+  done
+}
+
+# Helper: prompt file action
+function file_action() {
+  local file="$1"
+  echo
+  echo "📄 File selected: $(basename "$file")"
+  echo "What would you like to do with the file?"
+  echo "1) Open using external tool (termux-open)"
+  echo "2) Edit using nano"
+  read -p "Enter 1 or 2: " action
+
+  case "$action" in
+    1)
+      termux-open "$file"
+      ;;
+    2)
+      nano "$file"
+      ;;
+    *)
+      echo "❌ Invalid option. Exiting."
+      ;;
+  esac
+  exit 0
+}
+
+# Main entry
+if [ "$#" -eq 0 ]; then
+  # no args: interactive navigation
+  navigator
+elif [ "$#" -eq 1 ]; then
+  target="$1"
+  if [ -d "$target" ]; then
+    # if directory: cd and navigate
+    path="$target"
+    navigator
+  elif [ -f "$target" ]; then
+    # if file: direct file action
+    file_action "$target"
   else
-    echo "❓ Not a file or folder — exiting."
+    echo "❓ '$target' is not a valid file or folder." >&2
     exit 1
   fi
-done
+else
+  echo "Usage: open [folder|file]" >&2
+  exit 1
+fi
