@@ -1,0 +1,17 @@
+  if [ -z "$1" ]; then
+    echo "Usage: delete <filename>"
+    return 1
+  fi
+
+  if [ ! -e "$1" ]; then
+    echo "File not found: $1"
+    return 1
+  fi
+
+  echo -e "\033[1;31mAre you sure you want to delete this file? You may not recover this.\033[0m"
+  read -p "Type 'yes' to confirm: " confirm
+  if [ "$confirm" = "yes" ]; then
+    rm -i "$1"
+  else
+    echo "Aborted."
+  fi
