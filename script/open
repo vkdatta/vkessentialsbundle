@@ -1,6 +1,6 @@
-  local path="."
-  local items=()
-  local idx=1
+  path="."
+  items=()
+  idx=1
 
   echo "📂 Listing: $path"
   for item in "$path"/*; do
