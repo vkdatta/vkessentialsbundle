@@ -36,9 +36,9 @@ pip install --upgrade --force-reinstall git+https://github.com/vkdatta/termuxess
 ____
 
 For ```xtract```,  
-Enter: ```xyz.com/list/``` to extract tables/links from that page only  
-Enter: ```xyz.com/list/100``` to extract tables/links from 100th page only  
-Enter: ```xyz.com/list/{100}``` to extract tables/links from 1st page to 100th page  
+Enter: ```xyz.com/article/``` to extract tables/links from that page only  
+Enter: ```xyz.com/article/100``` to extract tables/links from 100th page only  
+Enter: ```xyz.com/article/{100}``` to extract tables/links from 1st page to 100th page  
 
 In addition, You can use multiple URLs from multiple sites using space/comma separation!! Also you can extract only tables/links from specific IDs or Classes
 
