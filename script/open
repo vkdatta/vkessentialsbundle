@@ -1,57 +1,82 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# Smart folder navigator + file action chooser
+# file: ~/bin/open
+# Interactive navigator + action dispatcher
+#   • Navigate folders by index
+#   • On files, choose to open/edit, or apply commands by index:
+#       copy N, erase N, delete N, etc.
+#   • Loop until user types 'exit' or Ctrl-C.
 
-path="."
+# List of “actions” you want to support by name:
+#   (they must already exist as functions or aliases in your shell)
+ACTIONS=( copy erase delete overwrite )  
+
+# Start in current directory
+cwd="$PWD"
 
 while true; do
   echo
-  echo "📂 Listing: $path"
+  echo "📂 Current directory: $cwd"
   items=()
-  idx=1
-  for item in "$path"/*; do
-    items+=( "$item" )
-    printf "%2d) %s\n" "$idx" "$(basename "$item")"
-    idx=$((idx+1))
+  i=1
+  for it in "$cwd"/*; do
+    items+=( "$it" )
+    printf "%2d) %s\n" "$i" "${it##*/}"
+    i=$((i+1))
   done
 
   echo
-  read -p "Open — Type number from above: " choice
+  read -p "Enter index OR '<action> <index>' (or 'exit'): " cmd arg
 
-  if ! [[ "$choice" =~ ^[0-9]+$ ]] \
-     || [ "$choice" -lt 1 ] \
-     || [ "$choice" -gt "${#items[@]}" ]; then
-    echo "Invalid selection — try again." >&2
+  # Exit?
+  [[ "$cmd" == "exit" ]] && break
+
+  # If just a number → treat as “open”:
+  if [[ -z "$arg" ]] && [[ "$cmd" =~ ^[0-9]+$ ]]; then
+    idx=$cmd
+    # validate
+    if (( idx<1 || idx>${#items[@]} )); then
+      echo "❌ Invalid index."
+      continue
+    fi
+    sel="${items[$((idx-1))]}"
+
+    if [ -d "$sel" ]; then
+      # descend into folder
+      cwd="$sel"
+      continue
+    elif [ -f "$sel" ]; then
+      # file: choose open or edit
+      echo
+      echo "📄 File: ${sel##*/}"
+      echo " 1) Open with external app"
+      echo " 2) Edit in nano"
+      read -p "Choose 1 or 2: " choice
+      if [ "$choice" = "1" ]; then
+        termux-open "$sel"
+      else
+        nano "$sel"
+      fi
+      # after file action, stay in same folder
+      continue
+    else
+      echo "❓ Not a file or folder."
+      continue
+    fi
+  fi
+
+  # If action + index
+  if [[ " ${ACTIONS[*]} " =~ " $cmd " ]] && [[ "$arg" =~ ^[0-9]+$ ]]; then
+    idx=$arg
+    if (( idx<1 || idx>${#items[@]} )); then
+      echo "❌ Invalid index."
+      continue
+    fi
+    sel="${items[$((idx-1))]}"
+    # Dispatch
+    echo "🔧 Running '$cmd' on '${sel##*/}'"
+    $cmd "$sel"
     continue
   fi
 
-  selected="${items[$((choice-1))]}"
-
-  if [ -d "$selected" ]; then
-    path="$selected"
-    continue
-  elif [ -f "$selected" ]; then
-    echo
-    echo "📄 File selected: $(basename "$selected")"
-    echo "What would you like to do with the file?"
-    echo "1) Open using external tool (termux-open)"
-    echo "2) Edit using nano"
-    read -p "Enter 1 or 2: " action
-
-    case "$action" in
-      1)
-        termux-open "$selected"
-        ;;
-      2)
-        nano "$selected"
-        ;;
-      *)
-        echo "❌ Invalid option. Exiting."
-        ;;
-    esac
-
-    exit 0
-  else
-    echo "❓ Not a file or folder — exiting."
-    exit 1
-  fi
+  echo "❌ Unrecognized input. Try again."
 done
