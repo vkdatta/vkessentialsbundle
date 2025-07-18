@@ -1,0 +1,32 @@
+  local items=()
+  local path=".."
+  local index=1
+
+  echo "📂 Listing: $path"
+  for item in "$path"/*; do
+    items+=("$item")
+    echo "$index) $(basename "$item")"
+    index=$((index + 1))
+  done
+
+  echo
+  read -p "Open — Type number from above: " choice
+
+  if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#items[@]}" ]; then
+    echo "Invalid selection."
+    return 1
+  fi
+
+  selected="${items[$((choice - 1))]}"
+
+  if [ -d "$selected" ]; then
+    echo
+    echo "📁 It's a folder. Listing contents:"
+    ls "$selected"
+  elif [ -f "$selected" ]; then
+    echo
+    echo "📄 It's a file. Opening with nano..."
+    nano "$selected"
+  else
+    echo "❓ Not a regular file or folder."
+  fi
