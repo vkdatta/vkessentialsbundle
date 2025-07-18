@@ -1,57 +1,87 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# Smart folder navigator + file action chooser
+# Enhanced folder navigator + file action chooser + command parser
 
 path="."
 
-while true; do
+function print_items() {
   echo
   echo "📂 Listing: $path"
   items=()
   idx=1
   for item in "$path"/*; do
-    items+=( "$item" )
+    items+=("$item")
     printf "%2d) %s\n" "$idx" "$(basename "$item")"
     idx=$((idx+1))
   done
+}
 
+while true; do
+  print_items
   echo
-  read -p "Open — Type number from above: " choice
+  read -p "Enter command (number to open, 'open <name>', or 'X' to exit): " input
 
-  if ! [[ "$choice" =~ ^[0-9]+$ ]] \
-     || [ "$choice" -lt 1 ] \
-     || [ "$choice" -gt "${#items[@]}" ]; then
-    echo "Invalid selection — try again." >&2
-    continue
+  # Exit
+  if [[ "$input" =~ ^[Xx]$ ]]; then
+    echo "Exiting..."
+    break
   fi
 
-  selected="${items[$((choice-1))]}"
+  # Direct open command: open <filename|foldername>
+  if [[ "$input" =~ ^open[[:space:]]+(.+) ]]; then
+    target_name="${BASH_REMATCH[1]}"
+    target_path="$path/$target_name"
 
-  if [ -d "$selected" ]; then
-    path="$selected"
-    continue
-  elif [ -f "$selected" ]; then
-    echo
-    echo "📄 File selected: $(basename "$selected")"
-    echo "What would you like to do with the file?"
-    echo "1) Open using external tool (termux-open)"
-    echo "2) Edit using nano"
-    read -p "Enter 1 or 2: " action
+    if [ -d "$target_path" ]; then
+      path="$target_path"
+      continue
+    elif [ -f "$target_path" ]; then
+      echo
+      echo "📄 File selected: $target_name"
+      echo "1) Open using external tool (termux-open)"
+      echo "2) Edit using nano"
+      read -p "Choose 1 or 2: " opt
+      case "$opt" in
+        1) termux-open "$target_path" ;;
+        2) nano "$target_path" ;;
+        *) echo "❌ Invalid option." ;;
+      esac
+      break
+    else
+      echo "❓ '$target_name' not found in current directory."
+      continue
+    fi
+  fi
 
-    case "$action" in
-      1)
-        termux-open "$selected"
-        ;;
-      2)
-        nano "$selected"
-        ;;
-      *)
-        echo "❌ Invalid option. Exiting."
-        ;;
-    esac
+  # Number selection
+  if [[ "$input" =~ ^[0-9]+$ ]]; then
+    choice=$input
+    if [ "$choice" -lt 1 ] || [ "$choice" -gt "${#items[@]}" ]; then
+      echo "Invalid selection — try again." >&2
+      continue
+    fi
+    selected="${items[$((choice-1))]}"
 
-    exit 0
+    if [ -d "$selected" ]; then
+      path="$selected"
+      continue
+    elif [ -f "$selected" ]; then
+      echo
+      echo "📄 File selected: $(basename "$selected")"
+      echo "1) Open using external tool (termux-open)"
+      echo "2) Edit using nano"
+      read -p "Choose 1 or 2: " act
+      case "$act" in
+        1) termux-open "$selected" ;;
+        2) nano "$selected" ;;
+        *) echo "❌ Invalid option." ;;
+      esac
+      break
+    else
+      echo "❓ Not a file or folder — exiting."
+      break
+    fi
   else
-    echo "❓ Not a file or folder — exiting."
-    exit 1
+    echo "Invalid command — please enter a number, 'open <name>', or 'X'." >&2
   fi
+
 done
