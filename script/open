@@ -1,15 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# file: ~/bin/open
-# Usage: open
-# Loops until you pick a file, opening folders and re-prompting as needed.
+# Smart folder navigator + file action chooser
 
-path="."   # start in current directory
+path="."
 
 while true; do
-  # gather items
-  items=()
   echo
   echo "📂 Listing: $path"
+  items=()
   idx=1
   for item in "$path"/*; do
     items+=( "$item" )
@@ -17,11 +14,9 @@ while true; do
     idx=$((idx+1))
   done
 
-  # prompt
   echo
   read -p "Open — Type number from above: " choice
 
-  # validate
   if ! [[ "$choice" =~ ^[0-9]+$ ]] \
      || [ "$choice" -lt 1 ] \
      || [ "$choice" -gt "${#items[@]}" ]; then
@@ -32,17 +27,31 @@ while true; do
   selected="${items[$((choice-1))]}"
 
   if [ -d "$selected" ]; then
-    # folder: descend and loop again
     path="$selected"
     continue
   elif [ -f "$selected" ]; then
-    # file: open and exit
     echo
-    echo "📄 Opening file: $selected"
-    nano "$selected"
+    echo "📄 File selected: $(basename "$selected")"
+    echo "What would you like to do with the file?"
+    echo "1) Open using external tool (termux-open)"
+    echo "2) Edit using nano"
+    read -p "Enter 1 or 2: " action
+
+    case "$action" in
+      1)
+        termux-open "$selected"
+        ;;
+      2)
+        nano "$selected"
+        ;;
+      *)
+        echo "❌ Invalid option. Exiting."
+        ;;
+    esac
+
     exit 0
   else
-    echo "❓ Not a file or directory — exiting." >&2
+    echo "❓ Not a file or folder — exiting."
     exit 1
   fi
 done
