@@ -1,35 +1,48 @@
-  path="."
-  items=()
-  idx=1
+#!/data/data/com.termux/files/usr/bin/bash
+# file: ~/bin/open
+# Usage: open
+# Loops until you pick a file, opening folders and re-prompting as needed.
 
+path="."   # start in current directory
+
+while true; do
+  # gather items
+  items=()
+  echo
   echo "📂 Listing: $path"
+  idx=1
   for item in "$path"/*; do
     items+=( "$item" )
     printf "%2d) %s\n" "$idx" "$(basename "$item")"
     idx=$((idx+1))
   done
 
+  # prompt
   echo
   read -p "Open — Type number from above: " choice
 
+  # validate
   if ! [[ "$choice" =~ ^[0-9]+$ ]] \
      || [ "$choice" -lt 1 ] \
      || [ "$choice" -gt "${#items[@]}" ]; then
-    echo "Invalid selection." >&2
-    return 1
+    echo "Invalid selection — try again." >&2
+    continue
   fi
 
   selected="${items[$((choice-1))]}"
 
   if [ -d "$selected" ]; then
-    echo
-    echo "📁 Directory — listing contents:"
-    ls "$selected"
+    # folder: descend and loop again
+    path="$selected"
+    continue
   elif [ -f "$selected" ]; then
+    # file: open and exit
     echo
-    echo "📄 File — opening in nano:"
+    echo "📄 Opening file: $selected"
     nano "$selected"
+    exit 0
   else
-    echo "❓ Neither file nor directory!" >&2
-    return 1
+    echo "❓ Not a file or directory — exiting." >&2
+    exit 1
   fi
+done
