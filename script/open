@@ -1,19 +1,17 @@
-  # where to list from; here "." means the current directory
   local path="."
-  local items=()         # will hold the full paths
-  local index=1
+  local items=()
+  local idx=1
 
   echo "📂 Listing: $path"
   for item in "$path"/*; do
-    items+=("$item")
-    printf "%2d) %s\n" "$index" "$(basename "$item")"
-    index=$((index + 1))
+    items+=( "$item" )
+    printf "%2d) %s\n" "$idx" "$(basename "$item")"
+    idx=$((idx+1))
   done
 
   echo
   read -p "Open — Type number from above: " choice
 
-  # validate input
   if ! [[ "$choice" =~ ^[0-9]+$ ]] \
      || [ "$choice" -lt 1 ] \
      || [ "$choice" -gt "${#items[@]}" ]; then
@@ -21,7 +19,7 @@
     return 1
   fi
 
-  selected="${items[$((choice - 1))]}"
+  selected="${items[$((choice-1))]}"
 
   if [ -d "$selected" ]; then
     echo
@@ -29,7 +27,7 @@
     ls "$selected"
   elif [ -f "$selected" ]; then
     echo
-    echo "📄 File — opening with nano:"
+    echo "📄 File — opening in nano:"
     nano "$selected"
   else
     echo "❓ Neither file nor directory!" >&2
