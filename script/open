@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# Advanced Smart File Manager with Fixed Move Functionality
+# Advanced Smart File Manager with Delete/Copy Functionality
 
 handle_file() {
     local file="$1"
@@ -153,6 +153,106 @@ move_items() {
     echo "Press 'b' to cancel move operation"
 }
 
+delete_items() {
+    echo "Select items to delete (enter numbers separated by ,)"
+    read -p "Item numbers: " itemlist
+    IFS=',' read -ra indices <<< "$itemlist"
+    
+    # Collect selected items
+    selected_items=()
+    for index in "${indices[@]}"; do
+        if [[ $index =~ ^[0-9]+$ ]] && [ $index -ge 1 ] && [ $index -le ${#items[@]} ]; then
+            selected_items+=("${items[$((index-1))]}")
+        else
+            echo "❌ Skipping invalid index: $index"
+        fi
+    done
+
+    if [ ${#selected_items[@]} -eq 0 ]; then
+        echo "❌ No valid items selected"
+        return
+    fi
+
+    # Show warning
+    echo
+    echo "⚠️ WARNING: You are about to delete the following items:"
+    for item in "${selected_items[@]}"; do
+        echo "- $(basename "$item")"
+    done
+    
+    read -p "Are you sure? This cannot be undone. (y/n): " confirm
+    if [[ $confirm != "y" && $confirm != "Y" ]]; then
+        echo "🚫 Deletion cancelled"
+        return
+    fi
+
+    # Perform deletion
+    for item in "${selected_items[@]}"; do
+        if [ -e "$item" ]; then
+            rm -rf -- "$item"
+            echo "🗑️ Deleted: $(basename "$item")"
+        else
+            echo "❌ Item not found: $(basename "$item")"
+        fi
+    done
+}
+
+copy_items() {
+    echo "Select items to copy (enter numbers separated by ,)"
+    read -p "Item numbers: " itemlist
+    IFS=',' read -ra indices <<< "$itemlist"
+    
+    # Collect selected items
+    selected_items=()
+    for index in "${indices[@]}"; do
+        if [[ $index =~ ^[0-9]+$ ]] && [ $index -ge 1 ] && [ $index -le ${#items[@]} ]; then
+            selected_items+=("${items[$((index-1))]}")
+        else
+            echo "❌ Skipping invalid index: $index"
+        fi
+    done
+
+    if [ ${#selected_items[@]} -eq 0 ]; then
+        echo "❌ No valid items selected"
+        return
+    fi
+
+    # Copy items
+    for item in "${selected_items[@]}"; do
+        if [ ! -e "$item" ]; then
+            echo "❌ Item not found: $(basename "$item")"
+            continue
+        fi
+        
+        base=$(basename -- "$item")
+        name="${base%.*}"
+        ext="${base##*.}"
+        
+        # Handle files with no extension
+        if [[ "$base" == "$ext" ]]; then
+            name="$base"
+            ext=""
+        fi
+        
+        count=1
+        newbase="$base"
+        
+        # Generate unique name
+        while [ -e "$path/$newbase" ]; do
+            if [ -n "$ext" ]; then
+                newbase="${name}_${count}.${ext}"
+            else
+                newbase="${name}_${count}"
+            fi
+            count=$((count+1))
+        done
+        
+        # Perform copy
+        cp -r -- "$item" "$path/$newbase"
+        echo "📋 Copied: $(basename "$item") → $newbase"
+    done
+}
+
 # Initialize global variables
 path=$(pwd)
 move_mode=false
@@ -205,9 +305,8 @@ while true; do
     if $move_mode; then
         echo "c) Confirm   b) Cancel"
     else
-        echo "n) New folder    f) New file    u) Up directory"
-        echo "c) Change Directory   m) Move items  q/h) Quit/Home"
-        echo "r) Rename"
+        echo "n) New folder    f) New file    u) Up directory cd) change directory"
+        echo "m) Move items    d) Delete items    c) Copy items    r) Rename   q/h) Quit/Home"
     fi
     
     read -p "Select item number or command: " choice
@@ -255,18 +354,27 @@ while true; do
             create_files
             continue
             ;;
-        c|C)
-           if ! cd "$path"; then
-               echo "❌ Could not cd into $path"
-            continue
-            fi
-               exec "$SHELL"
-            ;;
         m|M)
             if [ ${#items[@]} -eq 0 ]; then
                 echo "❌ No items to move"
             else
                 move_items
+            fi
+            continue
+            ;;
+        d|D)
+            if [ ${#items[@]} -eq 0 ]; then
+                echo "❌ No items to delete"
+            else
+                delete_items
+            fi
+            continue
+            ;;
+        c|C)
+            if [ ${#items[@]} -eq 0 ]; then
+                echo "❌ No items to copy"
+            else
+                copy_items
             fi
             continue
             ;;
@@ -277,6 +385,13 @@ while true; do
                 rename_item "$path"
             fi
             continue
+            ;;
+        cd|CD|cD|Cd)
+           if ! cd "$path"; then
+               echo "❌ Could not cd into $path"
+            continue
+            fi
+               exec "$SHELL"
             ;;
     esac
 
