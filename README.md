@@ -79,28 +79,26 @@ If the commands are not working as intended, there might be a possible update in
 ```bash
 pip install --upgrade --force-reinstall git+https://github.com/vkdatta/termuxessentialsbyvk.git
 ```
-
 ## Usage
 
-| Command | Example | Usage |
-| --- | --- | --- |
-| ```copy <filename>``` | ```copy xyz.py``` | Copies everything inside xyz.py into your clipboard. |
-| ```erase <filename>``` | ```erase notes.txt``` | erases content of notes.txt. |
-| ```overwrite <filename>``` | ```overwrite draft.md``` | overwrites/replaces draft.md content With text in your clipboard |
-| ```xtract``` | ```xtract``` | Lets you extract links/tables from websites |
-| ```list``` | ```list``` | Gives List of all files in your termux directory |
+| Command                       | Example                                         | What It Does                                                                                 |
+| ----------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `copy <filename>`             | `copy xyz.py`                                   | Copy the entire contents of `xyz.py` into your clipboard.                                   |
+| `erase <filename>`            | `erase notes.txt`                               | Wipe out **all** content of `notes.txt`, leaving it empty.                                  |
+| `overwrite <filename>`        | `overwrite draft.md`                            | Replace the contents of `draft.md` with whatever is in your clipboard.                      |
+| `delete <filename> or <path>`               | `delete old_project`                            | Remove the file or directory (and its contents) named `old_project`.                         |
+| `create <filename> or <path>`    | `create notes.txt`               | Create a file named `notes.txt`                             |
+| `open` (alias: `o`)           | `open` or just `o`                              | Launch the “omni-tool” to view, edit, rename, move, delete, etc.       |
+| `xtract`     | `xtract`   | Scrape **all** HTML tables & links from the specified pages or ranges across one or more sites. |
 
-____
+---
 
-For ```xtract```,  
-Enter: ```xyz.com/article/``` to extract tables/links from that page only  
-Enter: ```xyz.com/article/100``` to extract tables/links from 100th page only  
-Enter: ```xyz.com/article/{100}``` to extract tables/links from 1st page to 100th page  
-
-In addition, You can use multiple URLs from multiple sites using space/comma separation!! Also you can extract only tables/links from specific IDs or Classes
-
-Like 🤔?
-
-```bash
-xyz.com/list/{133}, pqr.com/p.html, 123apps.com/alltoolslist/2
-```
+> **Tip for `xtract`:**  
+> • Target specific elements via CSS selectors:  
+> ```bash
+> xtract example.com/data#table1
+> ```  
+> • Combine multiple URLs or ranges with commas/spaces:  
+> ```bash
+> xtract siteA.com/{1..5}, siteB.org/page/3
+> ```
