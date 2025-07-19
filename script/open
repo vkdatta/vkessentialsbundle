@@ -156,10 +156,10 @@ while true; do
 
     echo
     if $move_mode; then
-        echo "c) Confirm move to this folder   b) Cancel move"
+        echo "c) Confirm   b) Cancel"
     else
         echo "n) New folder    f) New file    u) Up directory"
-        echo "c) CD to here    m) Move items  q) Quit"
+        echo "c) Change Directory   m) Move items  q/h) Quit/Home"
     fi
     
     read -p "Select item number or command: " choice
@@ -192,7 +192,7 @@ while true; do
 
     # Handle normal mode commands
     case "$choice" in
-        q|Q)
+        q|Q|h|H)
             exit 0
             ;;
         u|U)
@@ -207,18 +207,11 @@ while true; do
             create_files
             continue
             ;;
-        bc|BC)
-            cd "$path"
-            continue
-            ;;
         c|C)
-           # 1) Move this process into the target dir
-            if ! cd "$path"; then
+           if ! cd "$path"; then
                echo "❌ Could not cd into $path"
             continue
             fi
-            # 2) Replace this script with a new interactive shell there
-               echo "🔀 Spawning new shell in $path (type 'exit' to return)..."
                exec "$SHELL"
             ;;
         m|M)
