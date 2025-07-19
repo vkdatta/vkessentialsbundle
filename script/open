@@ -87,9 +87,9 @@ create_dirs() {
 
 move_items() {
     # Select items to move
-    echo "Select items to move (enter numbers separated by |)"
+    echo "Select items to move (enter numbers separated by ,)"
     read -p "Item numbers: " itemlist
-    IFS='|' read -ra indices <<< "$itemlist"
+    IFS=',' read -ra indices <<< "$itemlist"
     
     # Collect selected items
     selected_items=()
