@@ -208,16 +208,7 @@ while true; do
             continue
             ;;
         c|C)
-            echo
-            echo "📌 To run commands in this directory:"
-            echo "cd '$path'"
-            echo
-            echo "Press Enter to copy this command to clipboard"
-            read -p "or any other key to continue..." -n 1 -s key
-            if [ -z "$key" ]; then
-                echo "cd '$path'" | termux-clipboard-set
-                echo "✅ Command copied to clipboard!"
-            fi
+            cd '$path'
             continue
             ;;
         m|M)
