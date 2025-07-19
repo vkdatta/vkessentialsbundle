@@ -21,24 +21,31 @@ handle_file() {
         case "$action" in
             1)
                 termux-open "$file"
+                return 1
                 ;;
             2)
                 nano "$file"
+                return 1
                 ;;
             3)
                 copy "$file"
+                return 1
                 ;;
             4)
                 delete "$file"
+                return 1
                 ;;
             5)
                 erase "$file"
+                return 1
                 ;;
             6)
                 overwrite "$file"
+                return 1
                 ;;
             7)
                 termux-share "$file"
+                return 1
                 ;;
             8)
                 return 1
