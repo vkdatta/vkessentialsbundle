@@ -207,9 +207,19 @@ while true; do
             create_files
             continue
             ;;
-        c|C)
+        bc|BC)
             cd "$path"
             continue
+            ;;
+        c|C)
+           # 1) Move this process into the target dir
+            if ! cd "$path"; then
+               echo "❌ Could not cd into $path"
+            continue
+            fi
+            # 2) Replace this script with a new interactive shell there
+               echo "🔀 Spawning new shell in $path (type 'exit' to return)..."
+               exec "$SHELL"
             ;;
         m|M)
             if [ ${#items[@]} -eq 0 ]; then
