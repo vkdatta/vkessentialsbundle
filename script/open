@@ -207,7 +207,7 @@ while true; do
     else
         echo "n) New folder    f) New file    u) Up directory"
         echo "c) Change Directory   m) Move items  q/h) Quit/Home"
-        echo "r) Rename
+        echo "r) Rename"
     fi
     
     read -p "Select item number or command: " choice
