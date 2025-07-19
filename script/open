@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# Advanced Smart File Manager with Intuitive Move Functionality
+# Advanced Smart File Manager with Fixed Move Functionality
 
 handle_file() {
     local file="$1"
@@ -75,7 +75,7 @@ move_items() {
     IFS='|' read -ra indices <<< "$itemlist"
     
     # Collect selected items
-    local selected_items=()
+    selected_items=()
     for index in "${indices[@]}"; do
         if [[ $index =~ ^[0-9]+$ ]] && [ $index -ge 1 ] && [ $index -le ${#items[@]} ]; then
             selected_items+=("${items[$((index-1))]}")
@@ -96,17 +96,21 @@ move_items() {
         echo "- $(basename "$item")"
     done
     
-    # Destination selection integrated into main interface
+    # Save current path for destination selection
+    original_path="$path"
+    path="$HOME"
+    move_mode=true
     echo
     echo "🌍 Navigate to destination folder (select folder or use commands)"
     echo "Press 'c' at destination to confirm move"
     echo "Press 'b' to cancel move operation"
-    
-    # Save current path and reset to home for destination selection
-    local original_path="$path"
-    path="$HOME"
-    move_mode=true
 }
+
+# Initialize global variables
+path=$(pwd)
+move_mode=false
+selected_items=()
+original_path=""
 
 # Handle command-line arguments
 if [ $# -eq 1 ]; then
@@ -122,13 +126,9 @@ if [ $# -eq 1 ]; then
         echo "Error: '$target' not found" >&2
         exit 1
     fi
-else
-    path=$(pwd)
 fi
 
 shopt -s nullglob
-move_mode=false
-selected_items=()
 while true; do
     echo
     if $move_mode; then
@@ -173,14 +173,18 @@ while true; do
                     mv -v "$item" "$path/"
                 done
                 echo "✅ Items moved successfully"
+                
+                # Return to original location
                 move_mode=false
                 path="$original_path"
+                selected_items=()
                 continue
                 ;;
             b|B)
                 echo "🚫 Move operation cancelled"
                 move_mode=false
                 path="$original_path"
+                selected_items=()
                 continue
                 ;;
         esac
