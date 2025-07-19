@@ -1,7 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/bash
+
 if [ -z "$1" ]; then
-  echo "Usage: create <foldername>"
+  echo "Usage: create <name>"
   exit 1
 fi
-mkdir "$1"
-echo "✅ Folder '$1' created."
+
+read -p "Create as (d)irectory or (f)ile? [d/f]: " type
+
+case "$type" in
+  d|D)
+    mkdir -p "$1"
+    echo "📁 Folder '$1' created."
+    ;;
+  f|F)
+    touch "$1"
+    echo "📄 File '$1' created."
+    ;;
+  *)
+    echo "❌ Invalid option. Aborting."
+    exit 1
+    ;;
+esac
