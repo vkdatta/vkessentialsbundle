@@ -209,7 +209,6 @@ while true; do
             ;;
         c|C)
             cd "$path"
-            continue
             ;;
         m|M)
             if [ ${#items[@]} -eq 0 ]; then
