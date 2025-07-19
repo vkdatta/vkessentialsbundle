@@ -93,12 +93,10 @@ pip install --upgrade --force-reinstall git+https://github.com/vkdatta/termuxess
 
 ---
 
-> **Tip for `xtract`:**  
-> • Target specific elements via CSS selectors:  
-> ```bash
-> xtract example.com/data#table1
-> ```  
-> • Combine multiple URLs or ranges with commas/spaces:  
-> ```bash
-> xtract siteA.com/{1..5}, siteB.org/page/3
-> ```
+> __**Tips for `xtract`**__  
+
+>  Enter: `example.com/article/p.html` to extract tables/links from that URL only  
+
+>  Enter: `example.com/article/100` [if the same URL has multiple pages] to extract tables/links from 100th page only
+
+>  Enter: `example.com/article/{100}` [if the same URL has multiple pages] to extract tables/links from 1st page to 100th page [Observe flower brackets]
