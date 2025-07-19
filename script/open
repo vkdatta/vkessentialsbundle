@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# Advanced Smart File Manager with Multi-Item Operations
+# Advanced Smart File Manager with Enhanced Move Functionality
 
 handle_file() {
     local file="$1"
@@ -21,8 +21,10 @@ handle_file() {
                 nano "$file"
                 ;;
             3)
-                rm -i "$file"
-                return 1
+                if rm -i "$file"; then
+                    echo "✅ File deleted"
+                    return 1
+                fi
                 ;;
             4)
                 return 1
@@ -66,27 +68,111 @@ create_dirs() {
     done
 }
 
+browse_destination() {
+    local current="$1"
+    local original="$current"
+    
+    while true; do
+        echo
+        echo "📂 Select destination: $current"
+        local dest_items=("$current"/*)
+        local dest_idx=1
+        
+        # Always show parent directory option
+        if [ "$current" != "/" ]; then
+            echo " 0) .. (parent directory)"
+        fi
+        
+        # List directories only
+        for item in "${dest_items[@]}"; do
+            if [ -d "$item" ]; then
+                printf "%2d) 📁 %s\n" "$dest_idx" "$(basename "$item")"
+                dest_idx=$((dest_idx+1))
+            fi
+        done
+
+        echo
+        echo "Options:"
+        echo "  c) Confirm this destination"
+        echo "  m) Enter manual path"
+        echo "  b) Back to move operation"
+        read -p "Select folder number or option: " dest_choice
+
+        case "$dest_choice" in
+            0)
+                if [ "$current" != "/" ]; then
+                    current=$(dirname "$current")
+                else
+                    echo "❌ Already at root directory"
+                fi
+                ;;
+            c|C)
+                echo "$current"
+                return 0
+                ;;
+            m|M)
+                read -p "Enter destination path: " man_path
+                if [ -d "$man_path" ]; then
+                    current=$(realpath "$man_path")
+                else
+                    echo "❌ Invalid path or not a directory"
+                fi
+                ;;
+            b|B)
+                echo "$original"
+                return 1
+                ;;
+            *)
+                if [[ "$dest_choice" =~ ^[0-9]+$ ]]; then
+                    local dir_idx=$((dest_choice-1))
+                    if [ "$dir_idx" -ge 0 ] && [ "$dir_idx" -lt "${#dest_items[@]}" ]; then
+                        local selected="${dest_items[$dir_idx]}"
+                        if [ -d "$selected" ]; then
+                            current="$selected"
+                        else
+                            echo "❌ Not a directory"
+                        fi
+                    else
+                        echo "❌ Invalid selection"
+                    fi
+                else
+                    echo "❌ Invalid option"
+                fi
+                ;;
+        esac
+    done
+}
+
 move_items() {
-    read -p "Enter item numbers to move (separated by |): " itemlist
+    echo "Select items to move (enter numbers separated by |)"
+    read -p "Item numbers: " itemlist
     IFS='|' read -ra indices <<< "$itemlist"
     
-    # Get destination path
-    read -p "Enter destination path: " dest
-    dest=$(realpath "$dest" 2>/dev/null || echo "$path/$dest")
-    
-    if [ ! -d "$dest" ]; then
-        echo "❌ Destination does not exist or is not a directory"
+    # Collect selected items
+    local selected_items=()
+    for index in "${indices[@]}"; do
+        if [[ $index =~ ^[0-9]+$ ]] && [ $index -ge 1 ] && [ $index -le ${#items[@]} ]; then
+            selected_items+=("${items[$((index-1))]}")
+        else
+            echo "❌ Skipping invalid index: $index"
+        fi
+    done
+
+    if [ ${#selected_items[@]} -eq 0 ]; then
+        echo "❌ No valid items selected"
+        return
+    fi
+
+    # Browse for destination
+    local dest=$(browse_destination "$HOME")
+    if [ $? -ne 0 ] || [ -z "$dest" ]; then
+        echo "ℹ️ Move operation cancelled"
         return
     fi
 
     # Move selected items
-    for index in "${indices[@]}"; do
-        if [[ $index =~ ^[0-9]+$ ]] && [ $index -ge 1 ] && [ $index -le ${#items[@]} ]; then
-            item="${items[$((index-1))]}"
-            mv -v "$item" "$dest"
-        else
-            echo "❌ Invalid index: $index"
-        fi
+    for item in "${selected_items[@]}"; do
+        mv -v "$item" "$dest/"
     done
 }
 
@@ -153,9 +239,15 @@ while true; do
             ;;
         c|C)
             echo
-            echo "📌 Current directory set to:"
+            echo "📌 To run commands in this directory:"
             echo "cd '$path'"
-            echo "You can now run commands in this directory"
+            echo
+            echo "Press Enter to copy this command to clipboard"
+            read -p "or any other key to continue..." -n 1 -s key
+            if [ -z "$key" ]; then
+                echo "cd '$path'" | termux-clipboard-set
+                echo "✅ Command copied to clipboard!"
+            fi
             continue
             ;;
         m|M)
