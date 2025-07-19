@@ -1,5 +1,3 @@
-#!/data/data/com.termux/files/usr/bin/bash
-
 if [ -z "$1" ]; then
   echo "Usage: create <name>"
   exit 1
