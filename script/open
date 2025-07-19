@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# Advanced Smart File Manager with Enhanced Move Functionality
+# Advanced Smart File Manager with Intuitive Move Functionality
 
 handle_file() {
     local file="$1"
@@ -68,82 +68,8 @@ create_dirs() {
     done
 }
 
-browse_destination() {
-    local current="$1"
-    local original="$current"
-    
-    while true; do
-        echo
-        echo "📂 Select destination: $current"
-        local dest_items=("$current"/*)
-        local dest_idx=1
-        
-        # Always show parent directory option
-        if [ "$current" != "/" ]; then
-            echo " 0) .. (parent directory)"
-        fi
-        
-        # List directories only
-        for item in "${dest_items[@]}"; do
-            if [ -d "$item" ]; then
-                printf "%2d) 📁 %s\n" "$dest_idx" "$(basename "$item")"
-                dest_idx=$((dest_idx+1))
-            fi
-        done
-
-        echo
-        echo "Options:"
-        echo "  c) Confirm this destination"
-        echo "  m) Enter manual path"
-        echo "  b) Back to move operation"
-        read -p "Select folder number or option: " dest_choice
-
-        case "$dest_choice" in
-            0)
-                if [ "$current" != "/" ]; then
-                    current=$(dirname "$current")
-                else
-                    echo "❌ Already at root directory"
-                fi
-                ;;
-            c|C)
-                echo "$current"
-                return 0
-                ;;
-            m|M)
-                read -p "Enter destination path: " man_path
-                if [ -d "$man_path" ]; then
-                    current=$(realpath "$man_path")
-                else
-                    echo "❌ Invalid path or not a directory"
-                fi
-                ;;
-            b|B)
-                echo "$original"
-                return 1
-                ;;
-            *)
-                if [[ "$dest_choice" =~ ^[0-9]+$ ]]; then
-                    local dir_idx=$((dest_choice-1))
-                    if [ "$dir_idx" -ge 0 ] && [ "$dir_idx" -lt "${#dest_items[@]}" ]; then
-                        local selected="${dest_items[$dir_idx]}"
-                        if [ -d "$selected" ]; then
-                            current="$selected"
-                        else
-                            echo "❌ Not a directory"
-                        fi
-                    else
-                        echo "❌ Invalid selection"
-                    fi
-                else
-                    echo "❌ Invalid option"
-                fi
-                ;;
-        esac
-    done
-}
-
 move_items() {
+    # Select items to move
     echo "Select items to move (enter numbers separated by |)"
     read -p "Item numbers: " itemlist
     IFS='|' read -ra indices <<< "$itemlist"
@@ -163,17 +89,23 @@ move_items() {
         return
     fi
 
-    # Browse for destination
-    local dest=$(browse_destination "$HOME")
-    if [ $? -ne 0 ] || [ -z "$dest" ]; then
-        echo "ℹ️ Move operation cancelled"
-        return
-    fi
-
-    # Move selected items
+    # Show selected items
+    echo
+    echo "📦 Selected items:"
     for item in "${selected_items[@]}"; do
-        mv -v "$item" "$dest/"
+        echo "- $(basename "$item")"
     done
+    
+    # Destination selection integrated into main interface
+    echo
+    echo "🌍 Navigate to destination folder (select folder or use commands)"
+    echo "Press 'c' at destination to confirm move"
+    echo "Press 'b' to cancel move operation"
+    
+    # Save current path and reset to home for destination selection
+    local original_path="$path"
+    path="$HOME"
+    move_mode=true
 }
 
 # Handle command-line arguments
@@ -195,9 +127,16 @@ else
 fi
 
 shopt -s nullglob
+move_mode=false
+selected_items=()
 while true; do
     echo
-    echo "📂 Location: $path"
+    if $move_mode; then
+        echo "🚚 MOVE MODE: Select destination folder"
+    else
+        echo "📂 Location: $path"
+    fi
+    
     items=("$path"/*)
     
     if [ ${#items[@]} -eq 0 ]; then
@@ -216,11 +155,38 @@ while true; do
     fi
 
     echo
-    echo "n) New folder    f) New file    u) Up directory"
-    echo "c) CD to here    m) Move items  q) Quit"
+    if $move_mode; then
+        echo "c) Confirm move to this folder   b) Cancel move"
+    else
+        echo "n) New folder    f) New file    u) Up directory"
+        echo "c) CD to here    m) Move items  q) Quit"
+    fi
+    
     read -p "Select item number or command: " choice
 
-    # Handle commands
+    # Handle move mode commands
+    if $move_mode; then
+        case "$choice" in
+            c|C)
+                # Perform the move operation
+                for item in "${selected_items[@]}"; do
+                    mv -v "$item" "$path/"
+                done
+                echo "✅ Items moved successfully"
+                move_mode=false
+                path="$original_path"
+                continue
+                ;;
+            b|B)
+                echo "🚫 Move operation cancelled"
+                move_mode=false
+                path="$original_path"
+                continue
+                ;;
+        esac
+    fi
+
+    # Handle normal mode commands
     case "$choice" in
         q|Q)
             exit 0
@@ -271,7 +237,11 @@ while true; do
     if [ -d "$selected" ]; then
         path="$selected"
     elif [ -f "$selected" ]; then
-        handle_file "$selected"
+        if $move_mode; then
+            echo "⚠️  Please select a folder for destination"
+        else
+            handle_file "$selected"
+        fi
     else
         echo "❓ Unsupported item type" >&2
     fi
