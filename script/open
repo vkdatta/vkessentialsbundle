@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# Advanced Smart File Manager with Delete/Copy Functionality
+# Advanced Smart File Manager with Destination Selection for Copy
 
 handle_file() {
     local file="$1"
@@ -197,7 +197,7 @@ delete_items() {
     done
 }
 
-copy_items() {
+initiate_copy() {
     echo "Select items to copy (enter numbers separated by ,)"
     read -p "Item numbers: " itemlist
     IFS=',' read -ra indices <<< "$itemlist"
@@ -217,7 +217,24 @@ copy_items() {
         return
     fi
 
-    # Copy items
+    # Show selected items
+    echo
+    echo "📦 Selected items to copy:"
+    for item in "${selected_items[@]}"; do
+        echo "- $(basename "$item")"
+    done
+    
+    # Save current path for destination selection
+    original_path="$path"
+    path="$HOME"
+    copy_mode=true
+    echo
+    echo "📋 COPY MODE: Navigate to destination folder"
+    echo "Press 'c' at destination to confirm copy"
+    echo "Press 'b' to cancel copy operation"
+}
+
+perform_copy() {
     for item in "${selected_items[@]}"; do
         if [ ! -e "$item" ]; then
             echo "❌ Item not found: $(basename "$item")"
@@ -237,7 +254,7 @@ copy_items() {
         count=1
         newbase="$base"
         
-        # Generate unique name
+        # Generate unique name in destination directory
         while [ -e "$path/$newbase" ]; do
             if [ -n "$ext" ]; then
                 newbase="${name}_${count}.${ext}"
@@ -247,7 +264,7 @@ copy_items() {
             count=$((count+1))
         done
         
-        # Perform copy
+        # Perform copy to destination
         cp -r -- "$item" "$path/$newbase"
         echo "📋 Copied: $(basename "$item") → $newbase"
     done
@@ -256,6 +273,7 @@ copy_items() {
 # Initialize global variables
 path=$(pwd)
 move_mode=false
+copy_mode=false
 selected_items=()
 original_path=""
 
@@ -280,6 +298,8 @@ while true; do
     echo
     if $move_mode; then
         echo "🚚 MOVE MODE: Select destination folder"
+    elif $copy_mode; then
+        echo "📋 COPY MODE: Select destination folder"
     else
         echo "📂 Location: $path"
     fi
@@ -304,9 +324,11 @@ while true; do
     echo
     if $move_mode; then
         echo "c) Confirm   b) Cancel"
+    elif $copy_mode; then
+        echo "c) Confirm   b) Cancel"
     else
         echo "n) New folder    f) New file    u) Up directory cd) change directory"
-        echo "m) Move items    d) Delete items    c) Copy items    r) Rename   q/h) Quit/Home"
+        echo "m) Move items    d) Delete items    p) Copy items    r) Rename   q/h) Quit/Home"
     fi
     
     read -p "Select item number or command: " choice
@@ -330,6 +352,30 @@ while true; do
             b|B)
                 echo "🚫 Move operation cancelled"
                 move_mode=false
+                path="$original_path"
+                selected_items=()
+                continue
+                ;;
+        esac
+    fi
+
+    # Handle copy mode commands
+    if $copy_mode; then
+        case "$choice" in
+            c|C)
+                # Perform the copy operation
+                perform_copy
+                echo "✅ Items copied successfully"
+                
+                # Return to original location
+                copy_mode=false
+                path="$original_path"
+                selected_items=()
+                continue
+                ;;
+            b|B)
+                echo "🚫 Copy operation cancelled"
+                copy_mode=false
                 path="$original_path"
                 selected_items=()
                 continue
@@ -370,11 +416,11 @@ while true; do
             fi
             continue
             ;;
-        c|C)
+        p|P)
             if [ ${#items[@]} -eq 0 ]; then
                 echo "❌ No items to copy"
             else
-                copy_items
+                initiate_copy
             fi
             continue
             ;;
@@ -406,7 +452,7 @@ while true; do
     if [ -d "$selected" ]; then
         path="$selected"
     elif [ -f "$selected" ]; then
-        if $move_mode; then
+        if $move_mode || $copy_mode; then
             echo "⚠️  Please select a folder for destination"
         else
             handle_file "$selected"
