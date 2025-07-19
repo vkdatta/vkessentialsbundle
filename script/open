@@ -208,7 +208,7 @@ while true; do
             continue
             ;;
         c|C)
-            cd '$path'
+            cd "$path"
             continue
             ;;
         m|M)
