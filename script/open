@@ -7,11 +7,16 @@ handle_file() {
         echo
         echo "📄 File selected: $(basename "$file")"
         echo "What would you like to do with the file?"
-        echo "1) Open using external tool (termux-open)"
-        echo "2) Edit using nano"
-        echo "3) Delete file"
-        echo "4) Back to browser"
-        read -p "Enter choice [1-4]: " action
+        echo "1) View"
+        echo "2) Edit"
+        echo "3) Copy Content"
+        echo "4) Delete Content"
+        echo "5) Erase Content"
+        echo "6) Replace With Clipboard Content"
+        echo "7) Share"
+        echo "8) Back to Previous Menu"
+        echo "9) Back to Home/exit"
+        read -p "Enter choice [1-9]: " action
 
         case "$action" in
             1)
@@ -21,13 +26,25 @@ handle_file() {
                 nano "$file"
                 ;;
             3)
-                if rm -i "$file"; then
-                    echo "✅ File deleted"
-                    return 1
-                fi
+                copy "$file"
                 ;;
             4)
+                delete "$file"
+                ;;
+            5)
+                erase "$file"
+                ;;
+            6)
+                overwrite "$file"
+                ;;
+            7)
+                termux-share "$file"
+                ;;
+            8)
                 return 1
+                ;;
+            9)
+                exit 0
                 ;;
             *)
                 echo "❌ Invalid option. Try again."
