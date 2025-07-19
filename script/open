@@ -15,8 +15,8 @@ handle_file() {
         echo "6) Replace With Clipboard Content"
         echo "7) Share"
         echo "8) Back to Previous Menu"
-        echo "9) Back to Home/exit"
-        echo "0) Rename"
+        echo "9) Back to Home/Exit"
+        echo "0) Rename File"
         read -p "Enter choice [1-9]: " action
 
         case "$action" in
@@ -323,12 +323,13 @@ while true; do
 
     echo
     if $move_mode; then
-        echo "c) Confirm   b) Cancel"
+        echo "c) Confirm   x) Cancel"
     elif $copy_mode; then
-        echo "c) Confirm   b) Cancel"
+        echo "c) Confirm   x) Cancel"
     else
-        echo "n) New folder    f) New file    u) Up directory cd) change directory"
-        echo "m) Move items    d) Delete items    p) Copy items    r) Rename   q/h) Quit/Home"
+        echo "u) Up directory  cd) change directory r) Rename Current Directory"
+        echo "m) Move Items  d) Delete items c) Copy items"
+        echo "n) New folders  f) New files  q/h) Quit/Home"
     fi
     
     read -p "Select item number or command: " choice
@@ -349,7 +350,7 @@ while true; do
                 selected_items=()
                 continue
                 ;;
-            b|B)
+            x|X)
                 echo "🚫 Move operation cancelled"
                 move_mode=false
                 path="$original_path"
@@ -373,7 +374,7 @@ while true; do
                 selected_items=()
                 continue
                 ;;
-            b|B)
+            x|X)
                 echo "🚫 Copy operation cancelled"
                 copy_mode=false
                 path="$original_path"
@@ -416,7 +417,7 @@ while true; do
             fi
             continue
             ;;
-        p|P)
+        c|C)
             if [ ${#items[@]} -eq 0 ]; then
                 echo "❌ No items to copy"
             else
