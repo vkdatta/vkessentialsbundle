@@ -1,12 +1,35 @@
 ## termuxessentialsbyvk
 
-A small toolkit for Termux that lets you ```copy```, ```erase```, and ```overwrite``` contents inside a file via these simple commands. 
+A small toolkit for Termux that lets you:  
 
-Plus more like -
+- **`copy <filename>`**  
 
-1. ```xtract``` web scraper tool that extracts link/tables from multiple web pages!
-2. ```list``` which gives list of all files in your termux directory
+  Copy a file’s contents to your system clipboard.
 
+- **`erase <filename>`**  
+
+  Completely wipe out a file’s contents, leaving an empty file behind.
+
+- **`delete <path> or <filename>`**  
+
+  Remove a single file or directory (recursively) with a single command.
+
+- **`overwrite <filename>`**  
+
+  Replace a file’s entire contents with whatever is currently in your clipboard.
+
+- **`create <path> or <filename>`**  
+
+  Create a single file **or** directory in one go.  
+
+- **`open`** (alias: **`o`**)  
+
+  The “omni-tool” launcher — drill into any file or folder and pick from view, edit, share, move, rename, delete, etc., all without leaving your prompt.
+
+- **`xtract`**  
+
+  Scrape **all** HTML tables and hyperlinks from one or more paginated web pages in a single invocation. Perfect for harvesting catalogues, reports, or any tabular data spread across multiple pages.
+  
 ## Installation
 
 ```bash
